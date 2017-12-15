@@ -1,0 +1,13 @@
+
+.table {
+    width: 100%; /* Ширина таблицы */
+    border-collapse: collapse; /* Убираем двойные линии между ячейками */
+}
+.td, .th {
+    padding: 3px; /* Поля вокруг содержимого таблицы */
+    border: 1px solid white; /* Параметры рамки */
+    text-align: center;
+}
+.th {
+    background: #a0a0a0; /* Цвет фона */
+}

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1'/>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <title>Keli XK3118T1</title>
+    <link rel="stylesheet" type="text/css" href="global.css">
+    <link rel="shortcut icon" href="favicon.ico" type="image/png">
+    <!--<script src="microajax.js" type="text/javascript"></script>-->
+    <style>
+        #weight_style{
+            background: #fff;
+            font-size: 80px;
+            //font-family: Monaco, Courier, monospace;
+            font-family: Arial,sans-serif;
+            color: #618ad2;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        input{font-size:20px; text-align:center;}
+    </style>
+    <script>
+        var timeoutId;
+
+        function go() {
+            document.getElementById('weight').innerHTML = '<div>---</div>';
+            getWeight();
+        }
+
+        function getWeight(){
+            timeoutId = setTimeout(go, 10000);
+            var request;
+            try{
+                request = new XMLHttpRequest();
+
+            }catch (e){
+                // Internet Explorer Browsers
+                try{
+                    request = new ActiveXObject("Msxml2.XMLHTTP");
+                }catch (e) {
+                    try{
+                        request = new ActiveXObject("Microsoft.XMLHTTP");
+                    }catch (e){
+                        // Something went wrong
+                        alert("Your browser broke!");
+                        return false;
+                    }
+                }
+
+            }
+            request.onreadystatechange = function () {
+                if (this.readyState === 4 && this.status === 200){
+                    if (this.responseText !== null){
+                        clearTimeout(timeoutId);
+                        document.getElementById('weight').innerHTML = this.responseText;
+                        getWeight();
+                    }
+                }    
+            };
+            if((navigator.userAgent.indexOf("MSIE") !== -1 ) || (!!document.documentMode === true )){
+                request.open('GET','/weight?buster='+new Date().getTime(),true);
+            }else{
+                request.open('GET','/weight',true);
+            }
+            request.send(null);
+        }
+        /*window.onload = function () {
+            load("microajax.js", "js", function () {
+                getWeight();
+            });
+        };
+        function load(e, t, n) {
+            if ("js" === t) {
+                var a = document.createElement("script");
+                a.src = e,
+                    a.type = "text/javascript",
+                    a.async = !1,
+                    a.onload = function () { n() },
+                    document.getElementsByTagName("head")[0].appendChild(a)
+            } else if ("css" === t) {
+                var a = document.createElement("link");
+                a.href = e,
+                    a.rel = "stylesheet",
+                    a.type = "text/css",
+                    a.async = !1,
+                    a.onload = function () { n() },
+                    document.getElementsByTagName("head")[0].appendChild(a)
+            }
+        }*/
+    </script>
+</head>
+    <body onload="getWeight()"><!---->
+            <div align="center">
+                <table style="width: 100%">
+                    <tr><td><img src="logo-min.png" /></td><td align="right"><h5 id="brand_name">Keli XK3118T1</h5></td></tr>
+                </table>
+                <p hidden="hidden" id='dnt'></p>    
+            </div>
+            
+            <hr>
+            <div align='right' id='weight_style'>
+                <b id='weight'><div>---</div></b>
+            </div>
+            <hr>
+            <br/>
+            <table style="width:100%">
+              <tr>
+                <td>
+                  <a href='/scaleprop.html' class="btn btn--m btn--blue">установки</a><br>  
+                </td>  
+              </tr>
+              <tr>
+                <td>
+                  <a href='/events.html' class="btn btn--m btn--blue">события</a><br>
+                </td>  
+              </tr>
+              <tr>
+                <td>
+                  <a href='/admin.html' class="btn btn--m btn--blue">админ</a><br>
+                </td>  
+              </tr>
+            </table>
+            <br/>
+            <footer align="center">2017 © www.scale.in.ua</footer>
+    </body>
+</html>
