@@ -19,7 +19,7 @@ class XK3118T1Class : public TerminalClass{
 		XK3118T1Class(String n) : TerminalClass(n){};
 		~XK3118T1Class();
 		void init();
-		int getWeight(){return _weight;};
+		d_type getWeight(){return _weight;};
 		//void setWeight(const String& s){ weight = s;}
 		void parseDate(String);
 		void buildCommand();

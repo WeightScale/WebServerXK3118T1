@@ -34,16 +34,8 @@
  * This is a captive portal because through the softAP it will redirect any http request to http://192.168.4.1/
  */
 
-
-
-
-
 // Web server
 //ESP8266WebServer server(80);
-
-
-
-
 //int recPin = RX;
 //long baudRate;   // global in case useful elsewhere in a sketch
 
@@ -86,16 +78,27 @@ void setup() {
 void connectWifi() {
 	#if defined SERIAL_DEDUG
 		Serial.println("Connecting as wifi client...");
-	#endif	
-	
+	#endif
+
 	WiFi.disconnect();
-	WiFi.begin ( SCALES.getSSID().c_str(), SCALES.getPASS().c_str());
-	int connRes = WiFi.waitForConnectResult();
-	#if defined SERIAL_DEDUG
-		Serial.print ( "connRes: " );
-		Serial.println ( connRes );
-	#endif	
-	//SCALES.saveEvent("weight", /*String(XK3118T1.getWeight())+*/"ON");
+	/*!  */
+	int n = WiFi.scanNetworks();
+	if (n == 0)
+	return;
+	else{
+		for (int i = 0; i < n; ++i)	{
+			/*!  */
+			if(WiFi.SSID(i) == SCALES.getSSID().c_str()){
+				WiFi.begin ( SCALES.getSSID().c_str(), SCALES.getPASS().c_str());
+				int connRes = WiFi.waitForConnectResult();
+				#if defined SERIAL_DEDUG
+					Serial.print ( "connRes: " );
+					Serial.println ( connRes );
+				#endif
+				break;
+			}
+		}
+	}
 }
 
 void loop() {

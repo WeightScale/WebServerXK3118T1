@@ -23,7 +23,7 @@ void XK3118T1Class::parseDate(String str){
 		//weight = str.substring(0,7);
 		//weight = str.substring(1,8).toInt();
 		//_weight = str.substring(len-12,len-5).toInt();
-		_weight = str.substring(str.indexOf("(")-7,str.indexOf("(")).toInt();
+		_weight = str.substring(str.indexOf("(")-7,str.indexOf("(")).toFloat();
 		
 		//_weight = weight.toInt();		
 		detectStable();	

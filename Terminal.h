@@ -10,6 +10,8 @@
 #endif
 #include <functional>
 
+typedef float d_type;
+
 #define CR						0xd
 #define LF						0xa
 #define szCR_LF					"\x0D\x0A"
@@ -22,7 +24,7 @@ class TerminalClass{
 		String _name;
 		String inputString = "";							/* String для построения входящей команды. */
 		//double _weight, _weight_temp;
-		int _weight=-1, _weight_temp;
+		d_type _weight=-1, _weight_temp;
 		
 		unsigned char _stable_num = 0;
 		bool isStable = false;
