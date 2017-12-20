@@ -64,6 +64,9 @@
             }else{
                 request.open('GET','/weight',true);
             }
+            request.timeout = 5000;
+            request.ontimeout = function(){go();};
+            request.onerror = function(){go();};
             request.send(null);
         }
         /*window.onload = function () {

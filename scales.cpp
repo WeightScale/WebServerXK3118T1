@@ -19,7 +19,8 @@ ScalesClass::~ScalesClass(){}
 void ScalesClass::begin(){	
 	ScaleMemClass::init();
 	//loadAuth();	
-	loadSettings();		
+	loadSettings();
+	loadPortValue();		
 }
 
 void ScalesClass::setSSID(const String& ssid){
@@ -181,6 +182,35 @@ void ScalesClass::sendScaleSettingsSaveValue() {
 			}
 		}
 	}
+}
+
+void ScalesClass::getPortValue() {
+	//if (browserServer.args() > 0){  // Save Settings
+	bool flag = false;
+	for (uint8_t i = 0; i < browserServer.args(); i++) {
+		if (browserServer.argName(i) == "lengthWord") {
+			_settings.lengthWord = browserServer.arg(i).toInt();
+			flag = true;
+		}if (browserServer.argName(i) == "numberSigns") {
+			_settings.numberSigns = browserServer.arg(i).toInt();
+			flag = true;
+		}if (browserServer.argName(i) == "endSymbol") {
+			_settings.endSymbol = char(browserServer.arg(i).toInt());
+			flag = true;
+		}if (browserServer.argName(i) == "accuracy") {
+			_settings.accuracy = browserServer.arg(i).toInt();
+			flag = true;
+		}
+	}
+	if (browserServer.hasArg("update")){
+		SCALES.savePortValue();		
+	}
+	if(flag){
+		browserServer.send(200, "text/html", "");
+	}else{
+		browserServer.send(400, "text/html", "Ошибка");
+	}
+	//}
 }
 
 String ScalesClass::getHash(const String& code, const String& date, const String& type, const String& value){
@@ -426,15 +456,87 @@ bool ScalesClass::loadSettings() {
 
 	if (!json.success()) {
 		_settings.scaleName = "admin";
-		_settings.scalePass = "admin";		
+		_settings.scalePass = "admin";
 		return false;
-	}	
+	}
 	_settings.scaleName = json["scale"]["id_name_admin"].asString();
 	_settings.scalePass = json["scale"]["id_pass_admin"].asString();
 	_settings.scaleWlanSSID = json["scale"]["id_ssid"].asString();
 	_settings.scaleWlanKey = json["scale"]["id_key"].asString();
 	_settings.hostUrl = json["server"]["id_host"].asString();
 	_settings.hostPin = json["server"]["id_pin"].asString();
+	return true;
+}
+
+bool ScalesClass::savePortValue() {
+	File readFile = SPIFFS.open(SETTINGS_FILE, "r");
+	if (!readFile) {
+		readFile.close();
+		return false;
+	}
+	size_t size = readFile.size();
+	std::unique_ptr<char[]> buf(new char[size]);
+	readFile.readBytes(buf.get(), size);
+	readFile.close();
+	DynamicJsonBuffer jsonBuffer(size);
+	//StaticJsonBuffer<256> jsonBuffer;
+	JsonObject& json = jsonBuffer.parseObject(buf.get());
+	//JsonObject& json = openJsonFile(SERVER_FILE);
+
+	if (!json.success()) {
+		return false;
+	}
+	
+	json["port"]["length_word_id"] = _settings.lengthWord;
+	json["port"]["number_signs_id"] = _settings.numberSigns;
+	json["port"]["end_symbol_id"] = _settings.endSymbol;
+	json["port"]["accuracy_id"] = _settings.accuracy;
+
+	//TODO add AP data to html
+	File saveFile = SPIFFS.open(SETTINGS_FILE, "w");
+	if (!saveFile) {
+		saveFile.close();
+		return false;
+	}
+
+	json.printTo(saveFile);
+	saveFile.flush();
+	saveFile.close();
+	return true;
+}
+
+bool ScalesClass::loadPortValue() {
+	File serverFile = SPIFFS.open(SETTINGS_FILE, "r");
+	if (!serverFile) {
+		_settings.lengthWord = 12;
+		_settings.numberSigns = 7;
+		_settings.endSymbol = '(';
+		_settings.accuracy = 1;
+		serverFile.close();
+		return false;
+	}
+
+	size_t size = serverFile.size();
+
+	// Allocate a buffer to store contents of the file.
+	std::unique_ptr<char[]> buf(new char[size]);
+
+	// We don't use String here because ArduinoJson library requires the input
+	// buffer to be mutable. If you don't use ArduinoJson, you may as well
+	// use configFile.readString instead.
+	serverFile.readBytes(buf.get(), size);
+	serverFile.close();
+	DynamicJsonBuffer jsonBuffer(size);
+	//StaticJsonBuffer<256> jsonBuffer;
+	JsonObject& json = jsonBuffer.parseObject(buf.get());
+
+	if (!json.success()) {		
+		return false;
+	}
+	_settings.lengthWord = json["port"]["length_word_id"];
+	_settings.numberSigns = json["port"]["number_signs_id"];
+	_settings.endSymbol = json["port"]["end_symbol_id"];
+	_settings.accuracy = json["port"]["accuracy_id"];
 	return true;
 }
 

@@ -92,6 +92,14 @@ void handlePropSave() {
 	}	
 }
 
+void handlePortSave(){
+	if (browserServer.args() > 0){ // Save Settings
+		SCALES.getPortValue();
+	}else{
+		handleFileRead(browserServer.uri());
+	}
+}
+
 //Check if header is present and correct
 bool is_authentified(){
 	if (!browserServer.authenticate(SCALES.getNameAdmin().c_str(), SCALES.getPassAdmin().c_str())){

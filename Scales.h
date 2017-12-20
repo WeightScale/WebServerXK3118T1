@@ -15,13 +15,15 @@ using namespace ArduinoJson;
 #define SETTINGS_FILE "/settings.json"
 
 typedef struct {
+	unsigned char lengthWord;
+	unsigned char numberSigns;
+	char endSymbol;
+	int accuracy;
 	String scaleName;
 	String scalePass;
 	String scaleWlanSSID;
 	String scaleWlanKey;
 	String hostUrl;
-	//String hostEmail;
-	//String hostPass;
 	String hostPin;
 } settings_t;
 
@@ -30,8 +32,10 @@ class ScalesClass : public ScaleMemClass{
 	settings_t _settings;
 	bool saveAuth();
 	bool loadAuth();
-	bool saveSettings();	
-	bool loadSettings();	
+	bool saveSettings();
+	bool loadSettings();
+	bool savePortValue();
+	bool loadPortValue();		
 
 	public:			
 		ScalesClass();
@@ -47,8 +51,13 @@ class ScalesClass : public ScaleMemClass{
 		//bool pingServer();
 		bool eventToServer(const String&, const String&, const String&);
 		void sendScaleSettingsSaveValue();
+		void getPortValue();
 		String getHash(const String&, const String&, const String&, const String&);
 		String getIp();
+		unsigned char getLengthWord(){_settings.lengthWord;};
+		unsigned char getNumberSigns(){_settings.numberSigns;};
+		char getEndSymbol(){_settings.endSymbol;};
+		int getAccuracy(){_settings.accuracy;};
 		//void sendServerAuthSaveValue();
 		//void sendServerAuthValues();
 		//JsonObject &openJsonFile(const String&);

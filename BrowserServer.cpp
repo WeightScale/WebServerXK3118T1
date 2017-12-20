@@ -50,8 +50,11 @@ void BrowserServerClass::begin() {
 
 void BrowserServerClass::init(){
 	
-	on("/weight", [this](){				
-		this->send(200, "text/plain", String(XK3118T1.getWeight()));});
+	on("/weight", [this](){	
+		char buffer[10];			
+		//this->send(200, "text/plain", String(XK3118T1.getWeight()));});
+		dtostrf(XK3118T1.getWeight(), 6-SCALES.getAccuracy(), SCALES.getAccuracy(), buffer);
+		this->send(200, "text/plain", String(buffer));});
 		//this->send(200, "text/plain", XK3118T1.temp_w);});
 	on("/",[this](){if (!handleFileRead("/index.html"))	this->send(404, "text/plain", "FileNotFound");});
 	on("/scaleprop.html", [this]() {
@@ -59,6 +62,11 @@ void BrowserServerClass::init(){
 			return this->requestAuthentication();
 		handlePropSave();});
 	on("/scale/values", handleScaleProp);
+	on("/setport.html", [this]() {
+		if (!is_authentified())
+			return this->requestAuthentication();
+		handlePortSave();
+	});
 	/*on("/server/auth", [this](){
 			if (!is_authentified())
 				return browserServer.requestAuthentication();

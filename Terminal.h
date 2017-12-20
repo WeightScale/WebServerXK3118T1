@@ -10,7 +10,7 @@
 #endif
 #include <functional>
 
-typedef float d_type;
+typedef double d_type;
 
 #define CR						0xd
 #define LF						0xa
@@ -36,6 +36,7 @@ class TerminalClass{
 		TerminalClass(String);
 		~TerminalClass();
 		String getName(){return _name;};
+		String getInputString(){return inputString;};
 		//String getweight();
 		//String getTemp_w(){return temp_w;};
 		void init();		
