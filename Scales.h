@@ -10,9 +10,25 @@
 #endif
 #include <ArduinoJson.h>
 #include "ScaleMem.h"
+#include "TaskController.h"
+#include "Task.h"
 using namespace ArduinoJson;
 
 #define SETTINGS_FILE "/settings.json"
+#define STABLE_NUM_MAX 100
+#define STABLE_DELTA_STEP 10
+#define MAX_CHG 1018
+#define MIN_CHG 720
+
+#define EN_NCP  12							/* сигнал включения питания  */
+#define PWR_SW  13							/* сигнал от кнопки питания */
+#define LED  2								/* индикатор работы */
+
+#define CR						0xd
+#define LF						0xa
+#define szCR_LF					"\x0D\x0A"
+
+typedef double d_type;
 
 typedef struct {
 	unsigned char lengthWord;
@@ -30,6 +46,10 @@ typedef struct {
 class ScalesClass : public ScaleMemClass{
 	protected:	
 	settings_t _settings;
+	unsigned int charge;
+	d_type _weight=-1, _weight_temp;
+	unsigned char _stable_num = 0;
+	bool isStable = false;
 	bool saveAuth();
 	bool loadAuth();
 	bool saveSettings();
@@ -50,14 +70,20 @@ class ScalesClass : public ScaleMemClass{
 		bool saveEvent(const String&, const String&);
 		//bool pingServer();
 		bool eventToServer(const String&, const String&, const String&);
-		void sendScaleSettingsSaveValue();
-		void getPortValue();
+		void getScaleSettingsValue();
+		bool getPortValue();
 		String getHash(const String&, const String&, const String&, const String&);
 		String getIp();
-		unsigned char getLengthWord(){_settings.lengthWord;};
-		unsigned char getNumberSigns(){_settings.numberSigns;};
-		char getEndSymbol(){_settings.endSymbol;};
-		int getAccuracy(){_settings.accuracy;};
+		//unsigned char getLengthWord(){return _settings.lengthWord;};
+		//unsigned char getNumberSigns(){return _settings.numberSigns;};
+		//char getEndSymbol(){return _settings.endSymbol;};
+		int getAccuracy(){return _settings.accuracy;};
+		void setCharge(unsigned int ch){charge = ch;}
+		unsigned int getCharge(){return charge;}	
+		int getBattery(int);
+		void parseDate(String);
+		void detectStable();
+		d_type getWeight(){return _weight;};	
 		//void sendServerAuthSaveValue();
 		//void sendServerAuthValues();
 		//JsonObject &openJsonFile(const String&);
@@ -65,6 +91,7 @@ class ScalesClass : public ScaleMemClass{
 		friend ScaleMemClass;		
 };
 
+void powerOff();
 extern ScalesClass SCALES;
 
 #endif

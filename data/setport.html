@@ -33,7 +33,7 @@
             var formData = new FormData();
             formData.append('lengthWord', document.getElementById('length_word_id').value);
             formData.append('numberSigns', document.getElementById('number_signs_id').value);
-            formData.append('endSymbol', document.getElementById('end_symbol_id').value);
+            formData.append('endSymbol', document.getElementById('end_symbol_id').value.charCodeAt(0));
             formData.append('accuracy', document.getElementById('accuracy_id').value);
             formData.append('update', true);
             var http_request = new XMLHttpRequest();

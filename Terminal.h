@@ -10,7 +10,7 @@
 #endif
 #include <functional>
 
-typedef double d_type;
+
 
 #define CR						0xd
 #define LF						0xa

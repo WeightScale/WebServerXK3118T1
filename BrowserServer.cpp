@@ -1,6 +1,4 @@
-// 
-// 
-// 
+
 #include <ESP8266WebServer.h>
 #include <WiFiClient.h>
 #include <StreamString.h>
@@ -8,10 +6,10 @@
 #include <ArduinoJson.h>
 #include "BrowserServer.h"
 #include "handleHttp.h"
-#include "XK3118T1.h"
+//#include "XK3118T1.h"
 
 /* Для обновления программы. */
-ESP8266HTTPUpdateServer httpUpdater;
+//ESP8266HTTPUpdateServer httpUpdater;
 /* Soft AP network parameters */
 IPAddress apIP(192, 168, 4, 1);
 IPAddress netMsk(255, 255, 255, 0);
@@ -42,9 +40,11 @@ void BrowserServerClass::begin() {
 	/* Setup the DNS server redirecting all the domains to the apIP */
 	dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
 	dnsServer.start(DNS_PORT, "*", apIP);
-		
-	ESP8266WebServer::begin(); // Web server start
 	loadHTTPAuth();	
+	//httpUpdater.setup(&browserServer, "/update", _httpAuth.wwwUsername, _httpAuth.wwwPassword);
+	//httpUpdater.setup(&browserServer, "/firmware", _httpAuth.wwwUsername.c_str(), _httpAuth.wwwPassword.c_str());	
+	ESP8266WebServer::begin(); // Web server start
+	
 	init();
 }
 
@@ -53,9 +53,11 @@ void BrowserServerClass::init(){
 	on("/weight", [this](){	
 		char buffer[10];			
 		//this->send(200, "text/plain", String(XK3118T1.getWeight()));});
-		dtostrf(XK3118T1.getWeight(), 6-SCALES.getAccuracy(), SCALES.getAccuracy(), buffer);
-		this->send(200, "text/plain", String(buffer));});
-		//this->send(200, "text/plain", XK3118T1.temp_w);});
+		dtostrf(SCALES.getWeight(), 6-SCALES.getAccuracy(), SCALES.getAccuracy(), buffer);
+		this->send(200, "text/plain", String("{\"w\":\""+String(buffer)+"\",\"c\":"+String(SCALES.getCharge())+"}"));
+		//this->send(200, "text/plain", String(buffer));
+		//this->send(200, "text/plain", XK3118T1.temp_w);
+		});
 	on("/",[this](){if (!handleFileRead("/index.html"))	this->send(404, "text/plain", "FileNotFound");});
 	on("/scaleprop.html", [this]() {
 		if (!is_authentified())
@@ -148,18 +150,18 @@ void BrowserServerClass::init(){
 		if(upload.status == UPLOAD_FILE_START){
 			Serial.setDebugOutput(true);
 			WiFiUDP::stopAll();
-			#if defined SERIAL_DEDUG
-				Serial.printf("Update: %s\n", upload.filename.c_str());
+			#if defined SERIAL_DEDUG
+				Serial.printf("Update: %s\n", upload.filename.c_str());
 			#endif			
 			uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
 			if(!Update.begin(maxSketchSpace)){//start with max available size
 				Update.printError(Serial);
 			}
-			} else if(upload.status == UPLOAD_FILE_WRITE){
+		} else if(upload.status == UPLOAD_FILE_WRITE){
 			if(Update.write(upload.buf, upload.currentSize) != upload.currentSize){
 				Update.printError(Serial);
 			}
-			} else if(upload.status == UPLOAD_FILE_END){
+		} else if(upload.status == UPLOAD_FILE_END){
 			if(Update.end(true)){ //true to set the size to the current progress
 				#if defined SERIAL_DEDUG
 					Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);

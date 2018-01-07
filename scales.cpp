@@ -133,58 +133,56 @@ bool ScalesClass::eventToServer(const String& date, const String& type, const St
 	}
 	return false;
 }
-
-void ScalesClass::sendScaleSettingsSaveValue() {
-	if (browserServer.args() > 0){  // Save Settings
-		bool flag = false;
-		for (uint8_t i = 0; i < browserServer.args(); i++) {
-			if (browserServer.argName(i)=="date"){
-				DateTimeClass DateTime(browserServer.arg("date"));
-				Rtc.SetDateTime(DateTime.toRtcDateTime());
-				String message = "<div>Дата синхронизирована<br/>";
-				message+=getDateTime()+"</div>";
-				browserServer.send(200, "text/html", message);
-				return;
-			}
-			if (browserServer.argName(i) == "host") {
-				_settings.hostUrl = browserServer.urldecode(browserServer.arg(i));
-				flag = true;
-				//continue;
-			}else if (browserServer.argName(i) == "pin") {
-				_settings.hostPin = browserServer.urldecode(browserServer.arg(i));
-				flag = true;
-				//continue;
-			}else if (browserServer.argName(i) == "name_admin") {
-				_settings.scaleName = browserServer.urldecode(browserServer.arg(i));
-				flag = true;
-				//continue;
-			}else if (browserServer.argName(i) == "pass_admin") {
-				_settings.scalePass = browserServer.urldecode(browserServer.arg(i));
-				flag = true;
-				//continue;
-			}else if (browserServer.argName(i) == "ssid") {
-				_settings.scaleWlanSSID = browserServer.urldecode(browserServer.arg(i));
-				flag = true;
-				//continue;
-			}else if (browserServer.argName(i) == "key") {
-				_settings.scaleWlanKey = browserServer.urldecode(browserServer.arg(i));
-				connect = _settings.scaleWlanKey.length() > 0;
-				flag = true;
-				//continue;
-			}
+/*! Получить настройки весов которые отправил клиент */
+void ScalesClass::getScaleSettingsValue() {	
+	bool flag = false;
+	for (uint8_t i = 0; i < browserServer.args(); i++) {
+		if (browserServer.argName(i)=="date"){
+			DateTimeClass DateTime(browserServer.arg("date"));
+			Rtc.SetDateTime(DateTime.toRtcDateTime());
+			String message = "<div>Дата синхронизирована<br/>";
+			message+=getDateTime()+"</div>";
+			browserServer.send(200, "text/html", message);
+			return;
 		}
-		if(flag){
-			if (saveSettings()){
-				//browserServer.send(200, "text/html", "");
-				handleFileRead(browserServer.uri());
-			}else{
-				browserServer.send(400, "text/html", "Ошибка записи");
-			}
+		if (browserServer.argName(i) == "host") {
+			_settings.hostUrl = browserServer.urldecode(browserServer.arg(i));
+			flag = true;
+			//continue;
+		}else if (browserServer.argName(i) == "pin") {
+			_settings.hostPin = browserServer.urldecode(browserServer.arg(i));
+			flag = true;
+			//continue;
+		}else if (browserServer.argName(i) == "name_admin") {
+			_settings.scaleName = browserServer.urldecode(browserServer.arg(i));
+			flag = true;
+			//continue;
+		}else if (browserServer.argName(i) == "pass_admin") {
+			_settings.scalePass = browserServer.urldecode(browserServer.arg(i));
+			flag = true;
+			//continue;
+		}else if (browserServer.argName(i) == "ssid") {
+			_settings.scaleWlanSSID = browserServer.urldecode(browserServer.arg(i));
+			flag = true;
+			//continue;
+		}else if (browserServer.argName(i) == "key") {
+			_settings.scaleWlanKey = browserServer.urldecode(browserServer.arg(i));
+			connect = _settings.scaleWlanKey.length() > 0;
+			flag = true;
+			//continue;
 		}
 	}
+	if(flag){
+		if (saveSettings()){
+			handleFileRead(browserServer.uri());
+		}else{
+			browserServer.send(400, "text/html", "Ошибка записи");
+		}
+	}
+	
 }
-
-void ScalesClass::getPortValue() {
+/*! Получаем значения отправленые клиентом */
+bool ScalesClass::getPortValue() {
 	//if (browserServer.args() > 0){  // Save Settings
 	bool flag = false;
 	for (uint8_t i = 0; i < browserServer.args(); i++) {
@@ -205,12 +203,7 @@ void ScalesClass::getPortValue() {
 	if (browserServer.hasArg("update")){
 		SCALES.savePortValue();		
 	}
-	if(flag){
-		browserServer.send(200, "text/html", "");
-	}else{
-		browserServer.send(400, "text/html", "Ошибка");
-	}
-	//}
+	return flag;
 }
 
 String ScalesClass::getHash(const String& code, const String& date, const String& type, const String& value){
@@ -535,7 +528,7 @@ bool ScalesClass::loadPortValue() {
 	}
 	_settings.lengthWord = json["port"]["length_word_id"];
 	_settings.numberSigns = json["port"]["number_signs_id"];
-	_settings.endSymbol = json["port"]["end_symbol_id"];
+	_settings.endSymbol = char(json["port"]["end_symbol_id"]);
 	_settings.accuracy = json["port"]["accuracy_id"];
 	return true;
 }
@@ -560,4 +553,43 @@ String ScalesClass::getIp() {
 	}
 	client.stop();
 	return ip;
+}
+
+int ScalesClass::getBattery(int times){
+	long sum = 0;
+	for (byte i = 0; i < times; i++) {
+		sum += analogRead(A0);
+	}
+	return times == 0?sum :sum / times;
+}
+
+void ScalesClass::parseDate(String str){
+	int len = str.length();	 
+	if(len > _settings.lengthWord){		
+		_weight = str.substring(str.indexOf(_settings.endSymbol)-_settings.numberSigns, str.indexOf(_settings.endSymbol)).toFloat();
+		detectStable();	
+	}		
+}
+
+void ScalesClass::detectStable(){
+	if (_weight_temp - STABLE_DELTA_STEP <= _weight && _weight_temp + STABLE_DELTA_STEP >= _weight && _weight != 0) {
+		if (_stable_num <= STABLE_NUM_MAX){
+			if (_stable_num == STABLE_NUM_MAX) {
+				if (!isStable){
+					saveEvent("weight", String(_weight)+"_kg");
+					isStable = true;
+				}
+				return;
+			}
+			_stable_num++;
+		}
+	} else {
+		_stable_num=0;
+		isStable = false;
+	}
+	_weight_temp = _weight;
+}
+
+void powerOff(){
+	digitalWrite(EN_NCP, LOW); /// Выключаем стабилизатор
 }
