@@ -550,6 +550,8 @@ vmresolved.tools.path=C:\Users\Kostya\AppData\Local\arduino15\packages\esp8266\t
         <custom_esp8266_generic_ResetMethod>nodemcu</custom_esp8266_generic_ResetMethod>
         <custom_esp8266_generic_FlashFreq>80</custom_esp8266_generic_FlashFreq>
         <custom_esp8266_generic_FlashMode>qio</custom_esp8266_generic_FlashMode>
+        <vm.upload.useprogrammer>0</vm.upload.useprogrammer>
+        <custom_esp8266_generic_Debug>Serial</custom_esp8266_generic_Debug>
       </VisualMicroSettings>
     </VisualMicroSettings>
   </PropertyGroup>
@@ -1049,6 +1051,8 @@ vmresolved.tools.path=C:\Users\Kostya\AppData\Local\arduino15\packages\esp8266\t
         <custom_esp8266_generic_ResetMethod>nodemcu</custom_esp8266_generic_ResetMethod>
         <custom_esp8266_generic_FlashFreq>80</custom_esp8266_generic_FlashFreq>
         <custom_esp8266_generic_FlashMode>qio</custom_esp8266_generic_FlashMode>
+        <vm.upload.useprogrammer>0</vm.upload.useprogrammer>
+        <custom_esp8266_generic_Debug>Serial</custom_esp8266_generic_Debug>
       </VisualMicroSettings>
     </VisualMicroSettings>
   </PropertyGroup>
@@ -1107,6 +1111,9 @@ vmresolved.tools.path=C:\Users\Kostya\AppData\Local\arduino15\packages\esp8266\t
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="tools.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="version.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="WebServerXK3118T1.cpp">

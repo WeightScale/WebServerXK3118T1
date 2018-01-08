@@ -1,4 +1,5 @@
-﻿#include <EEPROM.h>
+﻿#include <Arduino.h>
+#include <EEPROM.h>
 #include <ESP8266HTTPClient.h>
 #include <FS.h>
 #include <ArduinoJson.h>
@@ -20,7 +21,14 @@ void ScalesClass::begin(){
 	ScaleMemClass::init();
 	//loadAuth();	
 	loadSettings();
-	loadPortValue();		
+	loadPortValue();
+	Serial.flush();
+	Serial.begin(constrain(_settings.speed, 600, 115200));
+	//Serial.setTimeout(100);
+	#if defined SERIAL_DEDUG
+		Serial.println();
+		Serial.print("Configuring access point...");
+	#endif		
 }
 
 void ScalesClass::setSSID(const String& ssid){
@@ -186,7 +194,12 @@ bool ScalesClass::getPortValue() {
 	//if (browserServer.args() > 0){  // Save Settings
 	bool flag = false;
 	for (uint8_t i = 0; i < browserServer.args(); i++) {
-		if (browserServer.argName(i) == "lengthWord") {
+		if (browserServer.argName(i) == "speed") {
+			_settings.speed = browserServer.arg(i).toInt();
+			Serial.flush();
+			Serial.begin(_settings.speed);
+			flag = true;
+		}if (browserServer.argName(i) == "lengthWord") {
 			_settings.lengthWord = browserServer.arg(i).toInt();
 			flag = true;
 		}if (browserServer.argName(i) == "numberSigns") {
@@ -480,6 +493,7 @@ bool ScalesClass::savePortValue() {
 		return false;
 	}
 	
+	json["port"]["speed_id"] = _settings.speed;
 	json["port"]["length_word_id"] = _settings.lengthWord;
 	json["port"]["number_signs_id"] = _settings.numberSigns;
 	json["port"]["end_symbol_id"] = _settings.endSymbol;
@@ -501,6 +515,7 @@ bool ScalesClass::savePortValue() {
 bool ScalesClass::loadPortValue() {
 	File serverFile = SPIFFS.open(SETTINGS_FILE, "r");
 	if (!serverFile) {
+		_settings.speed = 9600;
 		_settings.lengthWord = 12;
 		_settings.numberSigns = 7;
 		_settings.endSymbol = '(';
@@ -526,6 +541,7 @@ bool ScalesClass::loadPortValue() {
 	if (!json.success()) {		
 		return false;
 	}
+	_settings.speed = json["port"]["speed_id"];
 	_settings.lengthWord = json["port"]["length_word_id"];
 	_settings.numberSigns = json["port"]["number_signs_id"];
 	_settings.endSymbol = char(json["port"]["end_symbol_id"]);
@@ -592,4 +608,5 @@ void ScalesClass::detectStable(){
 
 void powerOff(){
 	digitalWrite(EN_NCP, LOW); /// Выключаем стабилизатор
+	ESP.reset();
 }

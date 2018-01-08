@@ -1,26 +1,26 @@
 //#define SERIAL_DEDUG
-
 #include <ESP8266WiFi.h>
 #include <IPAddress.h>
 #include <WiFiClient.h>
 #include <ESP8266HTTPClient.h>
-#include <ESP8266HTTPUpdateServer.h>
+//#include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
 #include <ESP8266mDNS.h>
 #include <FS.h>
 #include <Arduino.h>
-
 #include <ArduinoOTA.h>
 #include <ArduinoJson.h>
 #include <EEPROM.h>
 #include "DateTime.h"
-#include "XK3118T1.h"
-#include "Terminal.h"
+//#include "XK3118T1.h"
+//#include "Terminal.h"
 #include "ScaleMem.h"
 #include "tools.h"
 #include "BrowserServer.h" 
 #include "Scales.h"
+#include "Task.h"
+#include "version.h"
 
 /*
  * This example serves a "hello world" on a WLAN and a SoftAP at the same time.
@@ -34,12 +34,21 @@
  * This is a captive portal because through the softAP it will redirect any http request to http://192.168.4.1/
  */
 
-// Web server
-//ESP8266WebServer server(80);
-//int recPin = RX;
-//long baudRate;   // global in case useful elsewhere in a sketch
+void takeBlink();
+void takeBattery();
+void powerSwitchInterrupt();
+void connectWifi();
+//
+TaskController taskController = TaskController();		/*  */
+Task taskBlink(takeBlink, 500);							/*  */
+Task taskBattery(takeBattery, 20000);					/* 20 ��������� ����� ������� */
+Task taskPower(powerOff, 1200000);						/* 10 ����� ����������� � ��������� */
 
-/** Last time I tried to connect to WLAN */
+unsigned int COUNT_FLASH = 500;
+unsigned int COUNT_BLINK = 500;
+//
+void connectWifi();
+//
 long lastConnectTry = 0;
 
 /** Current WLAN status */
@@ -51,21 +60,20 @@ void setup() {
 	pinMode(LED, OUTPUT);
 	//digitalWrite(LED, HIGH);
 	pinMode(PWR_SW, INPUT);
-
+	digitalWrite(LED, HIGH);
 	while (digitalRead(PWR_SW) == HIGH){
 		delay(100);
 	};
 	
-	Serial.begin(9600);
-	//Serial.setTimeout(100);
-	#if defined SERIAL_DEDUG
-		Serial.println();
-		Serial.print("Configuring access point...");
-	#endif	
+	takeBattery();
+	Serial.begin(9600);	
+	taskController.add(&taskBlink);
+	taskController.add(&taskBattery);
+	//taskController.add(&taskPower);	
+		
 	delay(1000);
-	SPIFFS.begin(); // Not really needed, checked inside library and started if needed
-	
-	SCALES.begin();
+	SPIFFS.begin(); // Not really needed, checked inside library and started if needed	
+	SCALES.begin();		
 	
 	/* You can remove the password parameter if you want the AP to be open. */
 	WiFi.hostname(myHostname);
@@ -79,14 +87,31 @@ void setup() {
 	//ESP.eraseConfig();
 	browserServer.begin(); 
   
-	connect = SCALES.getSSID().length() > 0 /*strlen(SCALES.getSSID()) > 0*/; // Request WLAN connect if there is a SSID
+	connect = SCALES.getSSID().length() > 0; // Request WLAN connect if there is a SSID
 	Rtc.Begin();
-	SCALES.saveEvent("weight", "ON");	
-	attachInterrupt(digitalPinToInterrupt(PWR_SW), powerSwitchInterrupt, RISING);
+	SCALES.saveEvent("weight", "ON");
+	attachInterrupt(digitalPinToInterrupt(PWR_SW), powerSwitchInterrupt, RISING);	
+}
+
+void takeBlink() {
+	bool led = !digitalRead(LED);
+	digitalWrite(LED, led);	
+	taskBlink.setInterval(led ? COUNT_FLASH : COUNT_BLINK );
+}
+
+/**/
+void takeBattery(){	
+	unsigned int charge = SCALES.getBattery(1);
+	charge = constrain(charge, MIN_CHG, MAX_CHG);	
+	charge = map(charge, MIN_CHG, MAX_CHG, 0, 100);				
+	SCALES.setCharge(charge);
+	if (SCALES.getCharge() < 16){												//< ���� ����� ������� 15% ����� ��������� ������
+		powerOff();
+	}		
 }
 
 void powerSwitchInterrupt(){
-	long t = millis();
+	unsigned long t = millis();
 	delay(100);
 	if(digitalRead(PWR_SW)==HIGH){ //
 		digitalWrite(LED, HIGH);
@@ -132,7 +157,7 @@ void connectWifi() {
 }
 
 void loop() {
-	//ArduinoOTA.handle();
+	taskController.run();
 	if (connect) {
 		#if defined SERIAL_DEDUG
 			Serial.println ( "Connect requested" );
@@ -175,7 +200,8 @@ void loop() {
 					// Add service to MDNS-SD
 					MDNS.addService("http", "tcp", 80);
 				}
-				//SCALES.saveEvent("net", "WLAN");
+				COUNT_FLASH = 50;
+				COUNT_BLINK = 3000;
 				SCALES.saveEvent("ip", SCALES.getIp());
 			} else if (s == WL_NO_SSID_AVAIL) {
 				WiFi.disconnect();
@@ -190,7 +216,7 @@ void loop() {
 	//XK3118T1.setWeight("25");
 	//int a = Serial.available();
 	if (Serial.available()) {		
-		XK3118T1.buildCommand();
+		SCALES.parseDate(Serial.readStringUntil(LF));
 	}
 }
 

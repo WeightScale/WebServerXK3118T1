@@ -31,6 +31,7 @@
         };
         function saveValue(){
             var formData = new FormData();
+            formData.append('speed', document.getElementById('speed_id').value);
             formData.append('lengthWord', document.getElementById('length_word_id').value);
             formData.append('numberSigns', document.getElementById('number_signs_id').value);
             formData.append('endSymbol', document.getElementById('end_symbol_id').value.charCodeAt(0));
@@ -57,6 +58,21 @@
     <legend>Общии настройки</legend>
     <form action='javascript:setMax()'>
         <table>
+            <tr>
+                <td>Скорость порта</td>
+                <td>
+                    <select id="speed_id" name="speed" title="Выбор скорости COM порта" style="width: 100%">
+                        <option name="600" value="600"> 600 </option>
+                        <option name="1200" value="1200"> 1200 </option>
+                        <option name="2400" value="2400"> 2400 </option>
+                        <option name="4800" value="4800"> 4800 </option>
+                        <option name="9600" value="9600"> 9600 </option>
+                        <option name="19200" value="19200"> 19200 </option>
+                        <option name="38400" value="38400"> 38400 </option>
+                        <option name="115200" value="115200"> 115200 </option>
+                    </select>
+                </td>
+            </tr>
             <tr>
                 <td>Длина слова</td>
                 <td><input type="number" title="Длина слова передачи данных без символов \x0D\x0A" id='length_word_id' name='length_word' placeholder='Длина слова'></td>

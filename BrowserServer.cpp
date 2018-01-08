@@ -6,7 +6,7 @@
 #include <ArduinoJson.h>
 #include "BrowserServer.h"
 #include "handleHttp.h"
-//#include "XK3118T1.h"
+#include "Scales.h"
 
 /* Для обновления программы. */
 //ESP8266HTTPUpdateServer httpUpdater;
@@ -22,14 +22,14 @@ File fsUploadFile;
 /** Should I connect to WLAN asap? */
 boolean connect;
 /* Set these to your desired softAP credentials. They are not configurable at runtime */
-const char *softAP_ssid = "XK3118T1";
+const char *softAP_ssid = "SCALES";
 const char *softAP_password = "12345678";
 
 const char* super_user_login = "su";
 const char* super_user_password = "1234";
 
 /* hostname for mDNS. Should work at least on windows. Try http://esp8266.local */
-const char *myHostname = "keli";
+const char *myHostname = "scale";
 
 BrowserServerClass::BrowserServerClass(uint16_t port) : ESP8266WebServer(port) {}
 
@@ -51,23 +51,26 @@ void BrowserServerClass::begin() {
 void BrowserServerClass::init(){
 	
 	on("/weight", [this](){	
-		char buffer[10];			
-		//this->send(200, "text/plain", String(XK3118T1.getWeight()));});
+		char buffer[10];
 		dtostrf(SCALES.getWeight(), 6-SCALES.getAccuracy(), SCALES.getAccuracy(), buffer);
 		this->send(200, "text/plain", String("{\"w\":\""+String(buffer)+"\",\"c\":"+String(SCALES.getCharge())+"}"));
-		//this->send(200, "text/plain", String(buffer));
-		//this->send(200, "text/plain", XK3118T1.temp_w);
-		});
-	on("/",[this](){if (!handleFileRead("/index.html"))	this->send(404, "text/plain", "FileNotFound");});
+		taskPower.updateCache();
+	});
+	on("/",[this](){if (!handleFileRead("/index.html"))	this->send(404, "text/plain", "FileNotFound");
+		taskPower.resume();
+	});
 	on("/scaleprop.html", [this]() {
 		if (!is_authentified())
 			return this->requestAuthentication();
-		handlePropSave();});
+		handlePropSave();
+		taskPower.pause();
+	});
 	on("/scale/values", handleScaleProp);
 	on("/setport.html", [this]() {
 		if (!is_authentified())
 			return this->requestAuthentication();
 		handlePortSave();
+		taskPower.pause();
 	});
 	/*on("/server/auth", [this](){
 			if (!is_authentified())
@@ -79,9 +82,7 @@ void BrowserServerClass::init(){
 			return browserServer.requestAuthentication();
 		SCALES.sendServerAuthSaveValue();
 	});*/
-	on("/events.html", [this](){
-		if (!is_authentified())
-			return this->requestAuthentication();
+	on("/events.html", [this](){		
 		handleFileRead("/events.html");});
 	//list directory
 	on("/list", HTTP_GET, [this](){
@@ -89,10 +90,10 @@ void BrowserServerClass::init(){
 			return this->requestAuthentication(); 
 		handleFileList();});
 	//load editor
-	on("/edit.html", HTTP_GET, [this](){
+	on("/editor.html", HTTP_GET, [this](){
 		if (!this->checkAuth())
 			return this->requestAuthentication();
-		if(!handleFileRead("/edit.html")) 
+		if(!handleFileRead("/editor.html")) 
 			send(404, "text/plain", "FileNotFound");});
 	//create file
 	on("/edit", HTTP_PUT, [this](){
@@ -177,6 +178,7 @@ void BrowserServerClass::init(){
 		if (!this->checkAuth())
 			return this->requestAuthentication();
 		this->send_wwwauth_configuration_html();
+		taskPower.pause();
 	});
 	on("/admin/restart", [this]() {	
 		if (!this->checkAuth())

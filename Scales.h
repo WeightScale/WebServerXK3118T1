@@ -31,6 +31,7 @@ using namespace ArduinoJson;
 typedef double d_type;
 
 typedef struct {
+	unsigned long speed;
 	unsigned char lengthWord;
 	unsigned char numberSigns;
 	char endSymbol;
@@ -93,6 +94,10 @@ class ScalesClass : public ScaleMemClass{
 
 void powerOff();
 extern ScalesClass SCALES;
+extern TaskController taskController;				/*  */
+extern Task taskBlink;								/*  */
+extern Task taskBattery;							/*  */
+extern Task taskPower;
 
 #endif
 
