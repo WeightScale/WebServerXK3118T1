@@ -120,7 +120,7 @@ void takeBattery(){
 
 void powerSwitchInterrupt(){
 	unsigned long t = millis();
-	delay(100);
+	//delay(100);
 	if(digitalRead(PWR_SW)==HIGH){ //
 		digitalWrite(LED, HIGH);
 		while(digitalRead(PWR_SW)==HIGH){ //
@@ -169,67 +169,17 @@ void connectWifi() {
 }
 
 void loop() {
-	taskController.run();
-	/*if (connect) {
-		#if defined SERIAL_DEDUG
-			Serial.println ( "Connect requested" );
-		#endif
-		connect = false;
-		connectWifi();
-		lastConnectTry = millis();
-	}*/
-	/*{
-		int s = WiFi.status();
-		if (s == 0 && millis() > (lastConnectTry + 60000) ) {
-			/ * If WLAN disconnected and idle try to connect * /
-			/ * Don't set retry time too low as retry interfere the softAP operation * /
-			connect = true;
-		}
-		if (status != s) { // WLAN status change
-			#if defined SERIAL_DEDUG
-				Serial.print ( "Status: " );
-				Serial.println ( s );
-			#endif			
-			status = s;
-			if (s == WL_CONNECTED) {
-				/ * Just connected to WLAN * /
-				#if defined SERIAL_DEDUG
-					Serial.println ( "" );
-					Serial.print ( "Connected to " );
-					Serial.println ( SCALES.getSSID() );
-					Serial.print ( "IP address: " );
-					Serial.println ( WiFi.localIP() );
-				#endif	
-				// Setup MDNS responder
-				if (!MDNS.begin(myHostname)) {
-					#if defined SERIAL_DEDUG
-						Serial.println("Error setting up MDNS responder!");
-					#endif					
-				} else {
-					#if defined SERIAL_DEDUG
-						Serial.println("mDNS responder started");
-					#endif					
-					// Add service to MDNS-SD
-					MDNS.addService("http", "tcp", 80);
-				}
-				COUNT_FLASH = 50;
-				COUNT_BLINK = 3000;
-				SCALES.saveEvent("ip", SCALES.getIp());
-			} else if (s == WL_NO_SSID_AVAIL) {
-				WiFi.disconnect();
-			}
-		}
-	}*/
-	// Do work:
+	taskController.run();	
 	//DNS
 	dnsServer.processNextRequest();
 	//HTTP
-	browserServer.handleClient();	
-	//XK3118T1.setWeight("25");
-	//int a = Serial.available();
+	browserServer.handleClient();
+	
 	if (Serial.available()) {		
 		SCALES.parseDate(Serial.readStringUntil(LF));
-	}	
+	}
+	
+	powerSwitchInterrupt();	
 }
 
 void onStationModeConnected(const WiFiEventStationModeConnected& evt) {
@@ -242,14 +192,14 @@ void onStationModeConnected(const WiFiEventStationModeConnected& evt) {
 	COUNT_FLASH = 50;
 	COUNT_BLINK = 3000;
 	SCALES.saveEvent("ip", SCALES.getIp());
-	attachInterrupt(digitalPinToInterrupt(PWR_SW), powerSwitchInterrupt, RISING);
+	//attachInterrupt(digitalPinToInterrupt(PWR_SW), powerSwitchInterrupt, RISING);
 }
 
 void onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt) {
 	taskConnectWiFi.resume();
 	COUNT_FLASH = 500;
 	COUNT_BLINK = 500;
-	attachInterrupt(digitalPinToInterrupt(PWR_SW), powerSwitchInterrupt, RISING);
+	//attachInterrupt(digitalPinToInterrupt(PWR_SW), powerSwitchInterrupt, RISING);
 }
 
 
