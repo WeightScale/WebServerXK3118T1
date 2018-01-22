@@ -133,7 +133,7 @@ bool ScalesClass::eventToServer(const String& date, const String& type, const St
 */
 	message += "/scales.php?hash=" + hash;
 	http.begin(message);
-	http.setTimeout(1000);
+	http.setTimeout(3000);
 	int httpCode = http.GET();
 	http.end();
 	if(httpCode == HTTP_CODE_OK) {

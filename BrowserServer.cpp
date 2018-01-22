@@ -1,4 +1,3 @@
-
 #include <ESP8266WebServer.h>
 #include <WiFiClient.h>
 #include <StreamString.h>
@@ -180,10 +179,10 @@ void BrowserServerClass::init(){
 		this->send_wwwauth_configuration_html();
 		taskPower.pause();
 	});
-	on("/admin/restart", [this]() {	
-		if (!this->checkAuth())
+	/*on("/admin/restart", [this]() {	
+		if (!this->checkAuth())
 			return this->requestAuthentication();
-		this->restart_esp();});	
+		this->restart_esp();});	*/
 	on("/admin/wwwauth", [this]() {
 		if (!this->checkAuth())
 			return this->requestAuthentication();

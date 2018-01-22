@@ -3,19 +3,13 @@
 #include <IPAddress.h>
 #include <WiFiClient.h>
 #include <ESP8266HTTPClient.h>
-//#include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
 #include <ESP8266mDNS.h>
 #include <FS.h>
 #include <Arduino.h>
-#include <ArduinoOTA.h>
 #include <ArduinoJson.h>
-#include <EEPROM.h>
 #include "DateTime.h"
-//#include "XK3118T1.h"
-//#include "Terminal.h"
-#include "ScaleMem.h"
 #include "tools.h"
 #include "BrowserServer.h" 
 #include "Scales.h"
@@ -33,7 +27,8 @@
  * 
  * This is a captive portal because through the softAP it will redirect any http request to http://192.168.4.1/
  */
-
+void onStationModeConnected(const WiFiEventStationModeConnected& evt);
+void onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt);
 void takeBlink();
 void takeBattery();
 void powerSwitchInterrupt();
@@ -41,8 +36,11 @@ void connectWifi();
 //
 TaskController taskController = TaskController();		/*  */
 Task taskBlink(takeBlink, 500);							/*  */
-Task taskBattery(takeBattery, 20000);					/* 20 ��������� ����� ������� */
-Task taskPower(powerOff, 1200000);						/* 10 ����� ����������� � ��������� */
+Task taskBattery(takeBattery, 20000);					/* 20 Обновляем заряд батареи */
+Task taskPower(powerOff, 1200000);						/* 10 минут бездействия и выключаем */
+Task taskConnectWiFi(connectWifi, 60000);				/* Пытаемся соедениться с точкой доступа каждые 60 секунд */
+WiFiEventHandler stationModeConnectedHandler;
+WiFiEventHandler stationModeDisconnectedHandler;
 
 unsigned int COUNT_FLASH = 500;
 unsigned int COUNT_BLINK = 500;
@@ -69,11 +67,15 @@ void setup() {
 	Serial.begin(9600);	
 	taskController.add(&taskBlink);
 	taskController.add(&taskBattery);
-	//taskController.add(&taskPower);	
-		
-	delay(1000);
+	taskController.add(&taskConnectWiFi);
+	taskConnectWiFi.pause();
+	taskController.add(&taskPower);	
+	
 	SPIFFS.begin(); // Not really needed, checked inside library and started if needed	
-	SCALES.begin();		
+	SCALES.begin();	
+	
+	stationModeConnectedHandler = WiFi.onStationModeConnected(&onStationModeConnected);	
+	stationModeDisconnectedHandler = WiFi.onStationModeDisconnected(&onStationModeDisconnected);
 	
 	/* You can remove the password parameter if you want the AP to be open. */
 	WiFi.hostname(myHostname);
@@ -85,12 +87,12 @@ void setup() {
 		Serial.println(WiFi.softAPIP());	
 	#endif	
 	//ESP.eraseConfig();
+	connectWifi();
 	browserServer.begin(); 
   
 	connect = SCALES.getSSID().length() > 0; // Request WLAN connect if there is a SSID
 	Rtc.Begin();
-	SCALES.saveEvent("weight", "ON");
-	attachInterrupt(digitalPinToInterrupt(PWR_SW), powerSwitchInterrupt, RISING);	
+	SCALES.saveEvent("weight", "ON");		
 }
 
 void takeBlink() {
@@ -105,21 +107,20 @@ void takeBattery(){
 	charge = constrain(charge, MIN_CHG, MAX_CHG);	
 	charge = map(charge, MIN_CHG, MAX_CHG, 0, 100);				
 	SCALES.setCharge(charge);
-	if (SCALES.getCharge() < 16){												//< ���� ����� ������� 15% ����� ��������� ������
+	if (SCALES.getCharge() < 16){												//< Если заряд батареи 15% тогда выключаем модуль
 		powerOff();
 	}		
 }
 
 void powerSwitchInterrupt(){
 	unsigned long t = millis();
-	delay(100);
+	//delay(100);
 	if(digitalRead(PWR_SW)==HIGH){ //
 		digitalWrite(LED, HIGH);
 		while(digitalRead(PWR_SW)==HIGH){ //
 			delay(100);
-			//t++;
 			if(t + 4000 < millis()){ //
-				digitalWrite(LED, HIGH);
+				digitalWrite(LED, LOW);
 				while(digitalRead(PWR_SW) == HIGH){delay(10);};//
 				powerOff();
 				//ESP.reset();
@@ -134,13 +135,13 @@ void connectWifi() {
 	#if defined SERIAL_DEDUG
 		Serial.println("Connecting as wifi client...");
 	#endif
-
-	WiFi.disconnect();
+	WiFi.persistent(false);
+	//WiFi.disconnect();
 	/*!  */
-	int n = WiFi.scanNetworks();
-	if (n == 0)
-	return;
-	else{
+	int n = WiFi.scanNetworks();	
+	if (n == 0){		
+		goto disconnect;	
+	}else{
 		for (int i = 0; i < n; ++i)	{
 			/*!  */
 			if(WiFi.SSID(i) == SCALES.getSSID().c_str()){
@@ -150,73 +151,50 @@ void connectWifi() {
 					Serial.print ( "connRes: " );
 					Serial.println ( connRes );
 				#endif
-				break;
+				return;
 			}
 		}
+		goto disconnect;
+	}
+	disconnect:;
+	{
+		WiFi.disconnect();
 	}
 }
 
 void loop() {
-	taskController.run();
-	if (connect) {
-		#if defined SERIAL_DEDUG
-			Serial.println ( "Connect requested" );
-		#endif
-		connect = false;
-		connectWifi();
-		lastConnectTry = millis();
-	}
-	{
-		int s = WiFi.status();
-		if (s == 0 && millis() > (lastConnectTry + 60000) ) {
-			/* If WLAN disconnected and idle try to connect */
-			/* Don't set retry time too low as retry interfere the softAP operation */
-			connect = true;
-		}
-		if (status != s) { // WLAN status change
-			#if defined SERIAL_DEDUG
-				Serial.print ( "Status: " );
-				Serial.println ( s );
-			#endif			
-			status = s;
-			if (s == WL_CONNECTED) {
-				/* Just connected to WLAN */
-				#if defined SERIAL_DEDUG
-					Serial.println ( "" );
-					Serial.print ( "Connected to " );
-					Serial.println ( SCALES.getSSID() );
-					Serial.print ( "IP address: " );
-					Serial.println ( WiFi.localIP() );
-				#endif	
-				// Setup MDNS responder
-				if (!MDNS.begin(myHostname)) {
-					#if defined SERIAL_DEDUG
-						Serial.println("Error setting up MDNS responder!");
-					#endif					
-				} else {
-					#if defined SERIAL_DEDUG
-						Serial.println("mDNS responder started");
-					#endif					
-					// Add service to MDNS-SD
-					MDNS.addService("http", "tcp", 80);
-				}
-				COUNT_FLASH = 50;
-				COUNT_BLINK = 3000;
-				SCALES.saveEvent("ip", SCALES.getIp());
-			} else if (s == WL_NO_SSID_AVAIL) {
-				WiFi.disconnect();
-			}
-		}
-	}
-	// Do work:
+	taskController.run();	
 	//DNS
 	dnsServer.processNextRequest();
 	//HTTP
-	browserServer.handleClient();	
-	//XK3118T1.setWeight("25");
-	//int a = Serial.available();
+	browserServer.handleClient();
+	
 	if (Serial.available()) {		
 		SCALES.parseDate(Serial.readStringUntil(LF));
 	}
+	
+	powerSwitchInterrupt();	
 }
+
+void onStationModeConnected(const WiFiEventStationModeConnected& evt) {
+	taskConnectWiFi.pause();
+	// Setup MDNS responder
+	if (MDNS.begin(myHostname)) {
+		// Add service to MDNS-SD
+		MDNS.addService("http", "tcp", 80);
+	}
+	COUNT_FLASH = 50;
+	COUNT_BLINK = 3000;
+	SCALES.saveEvent("ip", SCALES.getIp());
+	//attachInterrupt(digitalPinToInterrupt(PWR_SW), powerSwitchInterrupt, RISING);
+}
+
+void onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt) {
+	taskConnectWiFi.resume();
+	COUNT_FLASH = 500;
+	COUNT_BLINK = 500;
+	//attachInterrupt(digitalPinToInterrupt(PWR_SW), powerSwitchInterrupt, RISING);
+}
+
+
 

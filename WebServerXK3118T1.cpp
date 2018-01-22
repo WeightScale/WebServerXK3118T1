@@ -1,21 +1,20 @@
-//#define SERIAL_DEDUG
+п»ї//#define SERIAL_DEDUG
 #include <ESP8266WiFi.h>
 #include <IPAddress.h>
 #include <WiFiClient.h>
 #include <ESP8266HTTPClient.h>
-//#include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
 #include <ESP8266mDNS.h>
 #include <FS.h>
 #include <Arduino.h>
-#include <ArduinoOTA.h>
+//#include <ArduinoOTA.h>
 #include <ArduinoJson.h>
-#include <EEPROM.h>
+//#include <EEPROM.h>
 #include "DateTime.h"
 //#include "XK3118T1.h"
 //#include "Terminal.h"
-#include "ScaleMem.h"
+//#include "ScaleMem.h"
 #include "tools.h"
 #include "BrowserServer.h" 
 #include "Scales.h"
@@ -33,6 +32,7 @@
  * 
  * This is a captive portal because through the softAP it will redirect any http request to http://192.168.4.1/
  */
+
 void onStationModeConnected(const WiFiEventStationModeConnected& evt);
 void onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt);
 void takeBlink();
@@ -42,9 +42,9 @@ void connectWifi();
 //
 TaskController taskController = TaskController();		/*  */
 Task taskBlink(takeBlink, 500);							/*  */
-Task taskBattery(takeBattery, 20000);					/* 20 Обновляем заряд батареи */
-Task taskPower(powerOff, 1200000);						/* 10 минут бездействия и выключаем */
-Task taskConnectWiFi(connectWifi, 60000);				/* Пытаемся соедениться с точкой доступа каждые 60 секунд */
+Task taskBattery(takeBattery, 20000);					/* 20 РћР±РЅРѕРІР»СЏРµРј Р·Р°СЂСЏРґ Р±Р°С‚Р°СЂРµРё */
+Task taskPower(powerOff, 1200000);						/* 10 РјРёРЅСѓС‚ Р±РµР·РґРµР№СЃС‚РІРёСЏ Рё РІС‹РєР»СЋС‡Р°РµРј */
+Task taskConnectWiFi(connectWifi, 60000);				/* РџС‹С‚Р°РµРјСЃСЏ СЃРѕРµРґРµРЅРёС‚СЊСЃСЏ СЃ С‚РѕС‡РєРѕР№ РґРѕСЃС‚СѓРїР° РєР°Р¶РґС‹Рµ 60 СЃРµРєСѓРЅРґ */
 WiFiEventHandler stationModeConnectedHandler;
 WiFiEventHandler stationModeDisconnectedHandler;
 
@@ -82,12 +82,12 @@ void setup() {
 	
 	stationModeConnectedHandler = WiFi.onStationModeConnected(&onStationModeConnected);	
 	stationModeDisconnectedHandler = WiFi.onStationModeDisconnected(&onStationModeDisconnected);
-	
-	/* You can remove the password parameter if you want the AP to be open. */
+  
+	WiFi.persistent(false);
 	WiFi.hostname(myHostname);
 	WiFi.softAPConfig(apIP, apIP, netMsk);
 	WiFi.softAP(softAP_ssid, softAP_password);
-	delay(500); // Without delay I've seen the IP address blank
+	delay(500); 
 	#if defined SERIAL_DEDUG
 		Serial.print("AP IP address: ");
 		Serial.println(WiFi.softAPIP());	
@@ -101,6 +101,9 @@ void setup() {
 	SCALES.saveEvent("weight", "ON");		
 }
 
+/*********************************/
+/* */
+/*********************************/
 void takeBlink() {
 	bool led = !digitalRead(LED);
 	digitalWrite(LED, led);	
@@ -113,7 +116,7 @@ void takeBattery(){
 	charge = constrain(charge, MIN_CHG, MAX_CHG);	
 	charge = map(charge, MIN_CHG, MAX_CHG, 0, 100);				
 	SCALES.setCharge(charge);
-	if (SCALES.getCharge() < 16){												//< Если заряд батареи 15% тогда выключаем модуль
+	if (SCALES.getCharge() < 16){												//< Р•СЃР»Рё Р·Р°СЂСЏРґ Р±Р°С‚Р°СЂРµРё 15% С‚РѕРіРґР° РІС‹РєР»СЋС‡Р°РµРј РјРѕРґСѓР»СЊ
 		powerOff();
 	}		
 }
@@ -141,8 +144,7 @@ void connectWifi() {
 	#if defined SERIAL_DEDUG
 		Serial.println("Connecting as wifi client...");
 	#endif
-	WiFi.persistent(false);
-	//WiFi.disconnect();
+	WiFi.disconnect(false);
 	/*!  */
 	int n = WiFi.scanNetworks();	
 	if (n == 0){		
@@ -164,7 +166,8 @@ void connectWifi() {
 	}
 	disconnect:;
 	{
-		WiFi.disconnect();
+		//WiFi.disconnect();
+		return;
 	}
 }
 
@@ -185,21 +188,19 @@ void loop() {
 void onStationModeConnected(const WiFiEventStationModeConnected& evt) {
 	taskConnectWiFi.pause();
 	// Setup MDNS responder
-	if (MDNS.begin(myHostname)) {
+	if (MDNS.begin(myHostname, WiFi.localIP())) {
 		// Add service to MDNS-SD
 		MDNS.addService("http", "tcp", 80);
 	}
 	COUNT_FLASH = 50;
 	COUNT_BLINK = 3000;
 	SCALES.saveEvent("ip", SCALES.getIp());
-	//attachInterrupt(digitalPinToInterrupt(PWR_SW), powerSwitchInterrupt, RISING);
 }
 
-void onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt) {
+void onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt) {	
 	taskConnectWiFi.resume();
 	COUNT_FLASH = 500;
 	COUNT_BLINK = 500;
-	//attachInterrupt(digitalPinToInterrupt(PWR_SW), powerSwitchInterrupt, RISING);
 }
 
 
