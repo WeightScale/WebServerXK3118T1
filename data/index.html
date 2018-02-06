@@ -58,9 +58,9 @@
                 }    
             };
             if((navigator.userAgent.indexOf("MSIE") !== -1 ) || (!!document.documentMode === true )){
-                request.open('GET','/weight?buster='+new Date().getTime(),true);
+                request.open('GET','/wt?buster='+new Date().getTime(),true);
             }else{
-                request.open('GET','/weight',true);
+                request.open('GET','/wt',true);
             }
             request.timeout = 5000;
             request.ontimeout = function(){go();};
@@ -72,7 +72,7 @@
     <body onload="getWeight()"><!---->
             <div align="center">
                 <table style="width: 100%">
-                    <tr><td><img src="scales.png" /></td><td align="right"><h5 id="brand_name">SCALE.IN.UA</h5></td></tr>
+                    <tr><td><img src="tenzomir.png" /></td><td align="right"><h5 id="brand_name">WWW.TENZOMIR.COM</h5></td></tr>
                 </table>
                 <p hidden="hidden" id='dnt'></p>    
             </div>
@@ -88,10 +88,10 @@
             <hr>
             <table style="width:100%">
               <tr><td><a href='/events.html' class="btn btn--m btn--blue">события</a><br></td></tr>
-              <tr><td><br/><a href='/scaleprop.html'>настройки</a><br></td></tr>
+              <tr><td><br/><a href='/settings.html'>настройки</a><br></td></tr>
             </table>
             <br/>
     <hr>
-    <footer align="center">2017 © www.scale.in.ua</footer>
+    <footer align="center">2018 © Powered by www.scale.in.ua</footer>
     </body>
 </html>

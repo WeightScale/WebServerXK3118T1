@@ -1,0 +1,21 @@
+{
+  "terminal":[
+    {
+      "name":"parser",
+      "page":"",
+      "char_syn":0,
+      "total":1,
+      "cut_end":2,
+      "char_ter":1,
+      "reverse":true
+    },
+    {
+      "name":"vk_zevs_3",
+      "page":"vk_zevs_3.html"
+    },
+    {
+      "name":"xk3118t1",
+      "page":"xk3118t1.html"
+    }
+  ]
+}

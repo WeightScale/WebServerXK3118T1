@@ -14,29 +14,24 @@
             http_request.onreadystatechange = function(){
                 if (http_request.readyState === 4  ){
                     var json = JSON.parse(http_request.responseText);
-                    var date = json.port;
-                    for (entry in date) {
+                    //var date = json.port;
+                    for (entry in json) {
                         if(document.getElementById(entry)!== null)
-                            document.getElementById(entry).value=date[entry];
+                            document.getElementById(entry).value=json[entry];
                     }
-                    document.getElementById('end_symbol_id').value = String.fromCharCode(document.getElementById('end_symbol_id').value);
+                    //document.getElementById('end_symbol_id').value = String.fromCharCode(document.getElementById('end_symbol_id').value);
                     document.body.style.visibility = 'visible';
                 }
             };
-            http_request.open("GET", "/settings.json", true);
+            http_request.open("GET", "/port.json", true);
             http_request.send(null);
         }
         window.onload = function () {
             GetSettings();
         };
-        function saveValue(){
-            var formData = new FormData();
-            formData.append('speed', document.getElementById('speed_id').value);
-            formData.append('lengthWord', document.getElementById('length_word_id').value);
-            formData.append('numberSigns', document.getElementById('number_signs_id').value);
-            formData.append('endSymbol', document.getElementById('end_symbol_id').value.charCodeAt(0));
-            formData.append('accuracy', document.getElementById('accuracy_id').value);
-            formData.append('update', true);
+        function saveValue(f){
+            var form = document.getElementById(f);
+            var formData = new FormData(form);
             var http_request = new XMLHttpRequest();
             http_request.onreadystatechange = function(){
                 if (this.readyState === 4 && this.status === 200){
@@ -56,12 +51,12 @@
 <hr>
 <fieldset id="form_max" style="visibility: visible">
     <legend>Общии настройки</legend>
-    <form action='javascript:setMax()'>
+    <form id="form_id" method='POST' >
         <table>
             <tr>
                 <td>Скорость порта</td>
                 <td>
-                    <select id="speed_id" name="speed" title="Выбор скорости COM порта" style="width: 100%">
+                    <select id="sp_id" name="spd" title="Выбор скорости COM порта" style="width: 100%">
                         <option name="600" value="600"> 600 </option>
                         <option name="1200" value="1200"> 1200 </option>
                         <option name="2400" value="2400"> 2400 </option>
@@ -73,7 +68,7 @@
                     </select>
                 </td>
             </tr>
-            <tr>
+            <!--<tr>
                 <td>Длина слова</td>
                 <td><input type="number" title="Длина слова передачи данных без символов \x0D\x0A" id='length_word_id' name='length_word' placeholder='Длина слова'></td>
             </tr>
@@ -84,11 +79,11 @@
             <tr>
                 <td>Конечный символ</td>
                 <td><input type="text" title="Введите символ который начинается после значения веса" maxlength="1" id='end_symbol_id' name='end_symbol' placeholder='Конечный символ'></td>
-            </tr>
+            </tr>-->
             <tr>
                 <td>Точность измерения</td>
                 <td>
-                    <select id="accuracy_id" name="accuracy" title="Введите шаг измерения" style="width: 100%">
+                    <select id="ac_id" name="acr" title="Введите шаг измерения" style="width: 100%">
                         <option name="0" value="0"> 0 </option>
                         <option name="0.0" value="1"> 0.0 </option>
                         <option name="0.00" value="2"> 0.00 </option>
@@ -97,7 +92,7 @@
                 </td>
             </tr>
         </table>
-        <a href="javascript:saveValue();">сохранить и выйти</a>
+        <a href="javascript:saveValue('form_id');">сохранить и выйти</a>
     </form>
 </fieldset>
 

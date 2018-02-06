@@ -1,34 +1,36 @@
 #include <ESP8266WebServer.h>
 #include <WiFiClient.h>
 #include <StreamString.h>
-#include <ArduinoOTA.h>
 #include <ArduinoJson.h>
 #include "BrowserServer.h"
 #include "handleHttp.h"
-#include "Scales.h"
+#include "Core.h"
+#include "Version.h"
+#include "HttpUpdater.h"
 
-/* Для обновления программы. */
+static const char netIndex[]= /*PROGMEM =*/ R"(	<html><meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1'/>
+												<body><form method='POST'>
+												<input type='checkbox' name='auto'><br/>												
+												<input name='ssid'><br/>
+												<input type='password' name='key'><br/>
+												<input type='submit' value='СОХРАНИТЬ'>
+												</form></body></html>)";
+/* */
 //ESP8266HTTPUpdateServer httpUpdater;
 /* Soft AP network parameters */
-IPAddress apIP(192, 168, 4, 1);
+IPAddress apIP(192,168,4,1);
 IPAddress netMsk(255, 255, 255, 0);
+
+IPAddress lanIp(192,168,1,100);			// Надо сделать настройки ip адреса
+IPAddress gateway(192,168,1,1);
 
 BrowserServerClass browserServer(80);
 DNSServer dnsServer;
 //holds the current upload
 File fsUploadFile;
 
-/** Should I connect to WLAN asap? */
-boolean connect;
-/* Set these to your desired softAP credentials. They are not configurable at runtime */
-const char *softAP_ssid = "SCALES";
-const char *softAP_password = "12345678";
-
-const char* super_user_login = "su";
-const char* super_user_password = "1234";
-
 /* hostname for mDNS. Should work at least on windows. Try http://esp8266.local */
-const char *myHostname = "scale";
+
 
 BrowserServerClass::BrowserServerClass(uint16_t port) : ESP8266WebServer(port) {}
 
@@ -39,178 +41,92 @@ void BrowserServerClass::begin() {
 	/* Setup the DNS server redirecting all the domains to the apIP */
 	dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
 	dnsServer.start(DNS_PORT, "*", apIP);
-	loadHTTPAuth();	
-	//httpUpdater.setup(&browserServer, "/update", _httpAuth.wwwUsername, _httpAuth.wwwPassword);
-	//httpUpdater.setup(&browserServer, "/firmware", _httpAuth.wwwUsername.c_str(), _httpAuth.wwwPassword.c_str());	
+		
 	ESP8266WebServer::begin(); // Web server start
-	
+	_downloadHTTPAuth();	
 	init();
 }
 
-void BrowserServerClass::init(){
-	
-	on("/weight", [this](){	
-		char buffer[10];
-		dtostrf(SCALES.getWeight(), 6-SCALES.getAccuracy(), SCALES.getAccuracy(), buffer);
-		this->send(200, "text/plain", String("{\"w\":\""+String(buffer)+"\",\"c\":"+String(SCALES.getCharge())+"}"));
-		taskPower.updateCache();
-	});
-	on("/",[this](){if (!handleFileRead("/index.html"))	this->send(404, "text/plain", "FileNotFound");
+void BrowserServerClass::init(){											
+	on("/",[&](){												/* Главная страница. */
+		handleFileRead(uri());
 		taskPower.resume();
 	});
-	on("/scaleprop.html", [this]() {
-		if (!is_authentified())
+	on("/rc", reconnectWifi);									/* Пересоединиться по WiFi. */
+	on("/sn",HTTP_GET,[&](){
+		if (!this->checkAdminAuth())
 			return this->requestAuthentication();
-		handlePropSave();
-		taskPower.pause();
+		send(200, "text/html", netIndex);
 	});
-	on("/scale/values", handleScaleProp);
-	on("/setport.html", [this]() {
-		if (!is_authentified())
-			return this->requestAuthentication();
-		handlePortSave();
-		taskPower.pause();
-	});
-	/*on("/server/auth", [this](){
-			if (!is_authentified())
-				return browserServer.requestAuthentication();
-			SCALES.sendServerAuthValues();	
-		});*/
-	/*on("/server/save", [this](){
-		if (!is_authentified())
-			return browserServer.requestAuthentication();
-		SCALES.sendServerAuthSaveValue();
-	});*/
-	on("/events.html", [this](){		
-		handleFileRead("/events.html");});
-	//list directory
-	on("/list", HTTP_GET, [this](){
-		if (!this->checkAuth())
-			return this->requestAuthentication(); 
-		handleFileList();});
-	//load editor
-	on("/editor.html", HTTP_GET, [this](){
-		if (!this->checkAuth())
-			return this->requestAuthentication();
-		if(!handleFileRead("/editor.html")) 
-			send(404, "text/plain", "FileNotFound");});
-	//create file
-	on("/edit", HTTP_PUT, [this](){
-		if (!this->checkAuth())
-			return this->requestAuthentication();
-		handleFileCreate();});
-	//delete file
-	on("/edit", HTTP_DELETE, [this](){
-		if (!this->checkAuth())
-			return this->requestAuthentication();
-		handleFileDelete();});
-	on("/edit", HTTP_POST, [this](){ 
-		if (!this->checkAuth())
-			return this->requestAuthentication();
-		this->send(200, "text/plain", ""); }, handleFileUpload);
+	on("/sn",HTTP_POST,[&](){
+		CORE.saveValueSettingsHttp(successResponse);
+		delay(100);
+		client().stop();
+		ESP.restart();
+	});		
+	on("/settings.html", handleSettingsHtml);					/* Открыть страницу настроек или сохранить значения. */	
+	on("/settings.json", handleFileReadAuth);
+	on("/sv", handleScaleProp);									/* Получить значения. */
 	
-	onNotFound([this](){
+	//list directory
+	on("/list", HTTP_GET, [&](){
+		if (!checkAdminAuth())
+			return requestAuthentication(); 
+		handleFileList();
+	});
+	//load editor
+	on("/editor.html", HTTP_GET, [&](){
+		if (!checkAdminAuth())
+			return requestAuthentication();
+		if(!handleFileRead("/editor.html")) 
+			send(404, "text/plain", "FileNotFound");
+	});
+	//create file
+	on("/edit", HTTP_PUT, [&](){
+		if (!checkAdminAuth())
+			return requestAuthentication();
+		handleFileCreate();
+	});
+	//delete file
+	on("/edit", HTTP_DELETE, [&](){
+		if (!checkAdminAuth())
+			return requestAuthentication();
+		handleFileDelete();
+	});
+	on("/edit", HTTP_POST, [&](){ 
+		if (!checkAdminAuth())
+			return requestAuthentication();
+		send(200, "text/plain", ""); }, handleFileUpload);
+	
+	on("/admin.html", [&]() {
+		if (!checkAdminAuth())
+			return requestAuthentication();
+		send_wwwauth_configuration_html();
+		taskPower.pause();
+	});	
+	on("/secret.json",handleFileReadAdmin);
+	onNotFound([&](){
 		if(isValidType(uri())){
 			if(!handleFileRead(uri()))
 				return send(404, "text/plain", "FileNotFound");	
-		}else{
-			if (!this->checkAuth())
-				return this->requestAuthentication();
-			if(!handleFileRead(uri()))
+		}else{			
+			if(!handleFileReadAuth())
 				return send(404, "text/plain", "FileNotFound");		
 		}		
-	});	
-	on("/update", HTTP_GET, [this]() {	
-		if (!this->checkAuth())
-			return this->requestAuthentication();	
-		if (!handleFileRead("/update.html"))
-			this->send(404, "text/plain", "FileNotFound");
 	});
-	on("/update/updatepossible", [this]() {
-		if (!this->checkAuth())
-			return this->requestAuthentication();
-		this->send_update_firmware_values_html();
-	});
-	on("/setmd5", [this]() {
-		if (!this->checkAuth())
-			return this->requestAuthentication();
-		this->setUpdateMD5();
-	});
-	on("/update", HTTP_POST, [this](){
-		if (!this->checkAuth())
-			return this->requestAuthentication();
-		this->sendHeader("Connection", "close");
-		this->sendHeader("Access-Control-Allow-Origin", "*");
-		String message = "<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1'/>";
-		message += "<meta http-equiv='refresh' content='15;URL=/admin.html'/>Update correct. Restarting...";
-		this->send(200, "text/html", (Update.hasError())?"FAIL": message);
-		ESP.restart();
-		},[this](){
-		HTTPUpload& upload = this->upload();
-		if(upload.status == UPLOAD_FILE_START){
-			Serial.setDebugOutput(true);
-			WiFiUDP::stopAll();
-			#if defined SERIAL_DEDUG
-				Serial.printf("Update: %s\n", upload.filename.c_str());
-			#endif			
-			uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-			if(!Update.begin(maxSketchSpace)){//start with max available size
-				Update.printError(Serial);
-			}
-		} else if(upload.status == UPLOAD_FILE_WRITE){
-			if(Update.write(upload.buf, upload.currentSize) != upload.currentSize){
-				Update.printError(Serial);
-			}
-		} else if(upload.status == UPLOAD_FILE_END){
-			if(Update.end(true)){ //true to set the size to the current progress
-				#if defined SERIAL_DEDUG
-					Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
-				#endif				
-			} else {
-				Update.printError(Serial);
-			}
-			Serial.setDebugOutput(false);
-		}
-		yield();
-	});	
-	on("/admin.html", [this]() {
-		if (!this->checkAuth())
-			return this->requestAuthentication();
-		this->send_wwwauth_configuration_html();
-		taskPower.pause();
-	});
-	/*on("/admin/restart", [this]() {	
-		if (!this->checkAuth())
-			return this->requestAuthentication();
-		this->restart_esp();});	*/
-	on("/admin/wwwauth", [this]() {
-		if (!this->checkAuth())
-			return this->requestAuthentication();
-		this->send_wwwauth_configuration_values_html();
-	});
-	on("/secret.json",[this]() {
-		if (!this->checkAuth())
-			return this->requestAuthentication();
-		handleFileRead("/secret.json");
-	});	
-	on("/settings.json",[this]() {
-		if (!is_authentified())
-			return this->requestAuthentication();
-		handleFileRead("/settings.json");
-	});
-	on("/generate_204", [this](){if (!handleFileRead("/index.html"))	this->send(404, "text/plain", "FileNotFound");});  //Android captive portal. Maybe not needed. Might be handled by notFound handler.
-	on("/fwlink", [this](){if (!handleFileRead("/index.html"))	this->send(404, "text/plain", "FileNotFound");});  //Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.	
+	//on("/generate_204", [this](){if (!handleFileRead("/index.html"))	this->send(404, "text/plain", "FileNotFound");});  //Android captive portal. Maybe not needed. Might be handled by notFound handler.
+	//on("/fwlink", [this](){if (!handleFileRead("/index.html"))	this->send(404, "text/plain", "FileNotFound");});  //Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.	
 	
-	const char * headerkeys[] = {"User-Agent","Cookie"} ;
+	const char * headerkeys[] = {"User-Agent","Cookie"/*,"x-SETNET"*/} ;
 	size_t headerkeyssize = sizeof(headerkeys)/sizeof(char*);
 	//ask server to track these headers
-	collectHeaders(headerkeys, headerkeyssize );
-	#if defined SERIAL_DEDUG
-		Serial.println("HTTP server started");
-	#endif	
+	collectHeaders(headerkeys, headerkeyssize );		
 }
 
-void BrowserServerClass::send_update_firmware_values_html() {
+/*
+void send_update_firmware_values_html() {
+	if (!browserServer.checkAdminAuth())
+		return browserServer.requestAuthentication();
 	String values = "";
 	uint32_t maxSketchSpace = (ESP.getSketchSize() - 0x1000) & 0xFFFFF000;
 	//bool updateOK = Update.begin(maxSketchSpace);
@@ -226,8 +142,8 @@ void BrowserServerClass::send_update_firmware_values_html() {
 		values += "remupdResult||div\n";
 	}
 
-	send(200, "text/plain", values);
-}
+	browserServer.send(200, "text/plain", values);
+}*/
 
 void BrowserServerClass::send_wwwauth_configuration_html() {
 	if (args() > 0){  // Save Settings
@@ -249,12 +165,12 @@ void BrowserServerClass::send_wwwauth_configuration_html() {
 			}
 		}
 
-		saveHTTPAuth();
+		_saveHTTPAuth();
 	}
-	handleFileRead("/admin.html");
+	handleFileRead(uri());
 }
 
-bool BrowserServerClass::saveHTTPAuth() {
+bool BrowserServerClass::_saveHTTPAuth() {
 	
 	DynamicJsonBuffer jsonBuffer(256);
 	//StaticJsonBuffer<256> jsonBuffer;
@@ -276,25 +192,42 @@ bool BrowserServerClass::saveHTTPAuth() {
 	return true;
 }
 
-void BrowserServerClass::send_wwwauth_configuration_values_html() {
-	String values = "";
+bool BrowserServerClass::_downloadHTTPAuth() {
+	_httpAuth.auth = false;
+	_httpAuth.wwwUsername = "sa";
+	_httpAuth.wwwPassword = "343434";
+	File configFile = SPIFFS.open(SECRET_FILE, "r");
+	if (!configFile) {
+		configFile.close();
+		return false;
+	}
+	size_t size = configFile.size();
 
-	values += "wwwauth|" + (String)(_httpAuth.auth ? "checked" : "") + "|chk\n";
-	values += "wwwuser|" + (String)_httpAuth.wwwUsername + "|input\n";
-	values += "wwwpass|" + (String)_httpAuth.wwwPassword + "|input\n";
+	std::unique_ptr<char[]> buf(new char[size]);
+	
+	configFile.readBytes(buf.get(), size);
+	configFile.close();
+	DynamicJsonBuffer jsonBuffer(256);
+	JsonObject& json = jsonBuffer.parseObject(buf.get());
 
-	send(200, "text/plain", values);
+	if (!json.success()) {
+		return false;
+	}
+	_httpAuth.auth = json["auth"];
+	_httpAuth.wwwUsername = json["user"].as<String>();
+	_httpAuth.wwwPassword = json["pass"].as<String>();
+	return true;
 }
 
-bool BrowserServerClass::checkAuth() {
+bool BrowserServerClass::checkAdminAuth() {
 	if (!_httpAuth.auth) {
 		return true;
 	} else {
 		return authenticate(_httpAuth.wwwUsername.c_str(), _httpAuth.wwwPassword.c_str());
 	}
-
 }
 
+/*
 void BrowserServerClass::restart_esp() {
 	String message = "<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1'/>";
 	message += "<meta http-equiv='refresh' content='10; URL=/admin.html'>Please Wait....Configuring and Restarting.";
@@ -302,7 +235,7 @@ void BrowserServerClass::restart_esp() {
 	SPIFFS.end(); // SPIFFS.end();
 	delay(1000);
 	ESP.restart();
-}
+}*/
 
 // convert a single hex digit character to its integer value (from https://code.google.com/p/avr-netino/)
 unsigned char BrowserServerClass::h2int(char c) {
@@ -326,8 +259,6 @@ String BrowserServerClass::urldecode(String input){ // (based on https://code.go
 		c = input[t];
 		if (c == '+') c = ' ';
 		if (c == '%') {
-
-
 			t++;
 			c = input[t];
 			t++;
@@ -339,56 +270,40 @@ String BrowserServerClass::urldecode(String input){ // (based on https://code.go
 	return ret;
 }
 
-bool BrowserServerClass::loadHTTPAuth() {
-    File configFile = SPIFFS.open(SECRET_FILE, "r");
-    if (!configFile) {
-        _httpAuth.auth = false;
-        _httpAuth.wwwUsername = "";
-        _httpAuth.wwwPassword = "";
-        configFile.close();
-        return false;
-    }
-
-    size_t size = configFile.size();    
-
-    // Allocate a buffer to store contents of the file.
-    std::unique_ptr<char[]> buf(new char[size]);
-
-    // We don't use String here because ArduinoJson library requires the input
-    // buffer to be mutable. If you don't use ArduinoJson, you may as well
-    // use configFile.readString instead.
-    configFile.readBytes(buf.get(), size);
-    configFile.close();
-    DynamicJsonBuffer jsonBuffer(256);
-    //StaticJsonBuffer<256> jsonBuffer;
-    JsonObject& json = jsonBuffer.parseObject(buf.get());
-
-    if (!json.success()) {
-        _httpAuth.auth = false;
-        return false;
-    }
-    _httpAuth.auth = json["auth"];
-    _httpAuth.wwwUsername = json["user"].asString();
-    _httpAuth.wwwPassword = json["pass"].asString();    
-    return true;
-}
-
-void BrowserServerClass::setUpdateMD5() {
-	_browserMD5 = "";
-	if (args() > 0){  // Read hash
-		for (uint8_t i = 0; i < args(); i++) {			
-			if (argName(i) == "md5") {
-				_browserMD5 = urldecode(arg(i));
+/*
+void setUpdateMD5() {
+	if (!browserServer.checkAdminAuth())
+		return browserServer.requestAuthentication();
+	String _browserMD5 = "";
+	if (browserServer.args() > 0){  // Read hash
+		for (uint8_t i = 0; i < browserServer.args(); i++) {			
+			if (browserServer.argName(i) == "md5") {
+				_browserMD5 = browserServer.urldecode(browserServer.arg(i));
 				Update.setMD5(_browserMD5.c_str());
 				continue;
-			}if (argName(i) == "size") {
-				_updateSize = arg(i).toInt();				
+			}if (browserServer.argName(i) == "size") {
+				//_updateSize = browserServer.arg(i).toInt();				
 				continue;
 			}
 		}
-		send(200, "text/html", "OK --> MD5: " + _browserMD5);
+		browserServer.send(200, "text/html", "OK --> MD5: " + _browserMD5);
 	}
+}*/
 
+bool handleFileReadAdmin(){
+	if (!browserServer.checkAdminAuth()){
+		browserServer.requestAuthentication();
+		return false;
+	}
+	return handleFileRead(browserServer.uri());
+}
+
+bool handleFileReadAuth(){
+	if (!browserServer.isAuthentified()){
+		browserServer.requestAuthentication();
+		return false;
+	}
+	return handleFileRead(browserServer.uri());
 }
 
 bool handleFileRead(String path){
@@ -457,7 +372,10 @@ void handleFileCreate(){
 }
 
 void handleFileList() {	
-	if(!browserServer.hasArg("dir")) {browserServer.send(500, "text/plain", "BAD ARGS"); return;}
+	if(!browserServer.hasArg("dir")) {
+		browserServer.send(500, "text/plain", "BAD ARGS"); 
+		return;
+	}
 	
 	String path = browserServer.arg("dir");
 	Dir dir = SPIFFS.openDir(path);
@@ -504,7 +422,17 @@ bool BrowserServerClass::isValidType(String filename){
 	else if(filename.endsWith(".png")) return true;
 	else if(filename.endsWith(".ico")) return true;
 	else if(filename.endsWith(".json")) return true;
+	else if(filename.endsWith(".html")) return true;
 	return false;	
+}
+
+bool BrowserServerClass::isAuthentified(){
+	if (!authenticate(CORE.getNameAdmin().c_str(), CORE.getPassAdmin().c_str())){
+		if (!checkAdminAuth()){
+			return false;
+		}
+	}
+	return true;
 }
 
 
