@@ -1,11 +1,12 @@
 ﻿#include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
+//#include <ESP8266mDNS.h>
 #include "BrowserServer.h" 
+#include "ESP8266NetBIOS.h" 
 #include "Core.h"
 #include "Task.h"
 #include "HttpUpdater.h"
-//#include "SerialPort.h"
-#include "Terminal.h"
+#include "SerialPort.h"
+#include "Terminals.h"
 #include "version.h"
 
 /*
@@ -72,8 +73,9 @@ void setup() {
 	//ESP.eraseConfig();
 	connectWifi();
 	browserServer.begin(); 
+	NBNS.begin(MY_HOST_NAME);
   	httpUpdater.setup(&browserServer,"sa","343434");
-	port->setup(&browserServer,"sa","343434"); 
+	SerialPort.setup(&browserServer,"sa","343434"); 
 	CORE.saveEvent("weight", "ON");		
 }
 
@@ -123,7 +125,8 @@ void connectWifi() {
 						WiFi.config(lanIp,gateway, netMsk);									// Надо сделать настройки ip адреса		
 					}
 				}				
-				WiFi.waitForConnectResult();				
+				WiFi.waitForConnectResult();	
+				CORE.saveEvent("ip", CORE.getIp());			
 				return;
 			}
 		}
@@ -137,9 +140,9 @@ void loop() {
 	//HTTP
 	browserServer.handleClient();
 	
-	//port->handlePort();
+	TerminalController.handle();
 	
-	//powerSwitchInterrupt();	
+	powerSwitchInterrupt();	
 	
 }
 
@@ -147,13 +150,12 @@ void onStationModeConnected(const WiFiEventStationModeConnected& evt) {
 	taskConnectWiFi.pause();
 	WiFi.softAP(SOFT_AP_SSID, SOFT_AP_PASSWORD, evt.channel); //Устанавливаем канал как роутера
 	// Setup MDNS responder
-	if (MDNS.begin(MY_HOST_NAME, WiFi.localIP())) {
+	/*if (MDNS.begin(MY_HOST_NAME, WiFi.localIP())) {
 		// Add service to MDNS-SD
 		MDNS.addService("http", "tcp", 80);
-	}
+	}*/
 	COUNT_FLASH = 3000;
 	COUNT_BLINK = 50;
-	CORE.saveEvent("ip", CORE.getIp());
 }
 
 void onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt) {	

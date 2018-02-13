@@ -82,7 +82,6 @@
   <armgcc.compiler.directories.IncludePaths>
     <ListValues>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266WiFi/src</Value>
-      <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266mDNS</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266WebServer/src</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/DNSServer/src</Value>
       <Value>C:/Users/Kostya/Documents/Arduino/libraries/ArduinoJson/src</Value>
@@ -92,6 +91,7 @@
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/Wire</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266HTTPUpdateServer/src</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266httpUpdate/src</Value>
+      <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266mDNS</Value>
       <Value>C:/Program Files (x86)/Arduino/libraries</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries</Value>
       <Value>C:/Users/Kostya/Documents/Arduino/libraries</Value>
@@ -103,6 +103,7 @@
       <Value>../../../WebServerXK3118T1</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/tools/sdk/include</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/tools/sdk/lwip/include</Value>
+      <Value>C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerHX711/esp8266_generic/Release/core</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include/c++/4.8.2</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include/c++/4.8.2/xtensa-lx106-elf</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include</Value>
@@ -133,7 +134,6 @@
   <armgcccpp.compiler.directories.IncludePaths>
     <ListValues>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266WiFi/src</Value>
-      <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266mDNS</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266WebServer/src</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/DNSServer/src</Value>
       <Value>C:/Users/Kostya/Documents/Arduino/libraries/ArduinoJson/src</Value>
@@ -143,6 +143,7 @@
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/Wire</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266HTTPUpdateServer/src</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266httpUpdate/src</Value>
+      <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266mDNS</Value>
       <Value>C:/Program Files (x86)/Arduino/libraries</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries</Value>
       <Value>C:/Users/Kostya/Documents/Arduino/libraries</Value>
@@ -154,6 +155,7 @@
       <Value>../../../WebServerXK3118T1</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/tools/sdk/include</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/tools/sdk/lwip/include</Value>
+      <Value>C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerHX711/esp8266_generic/Release/core</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include/c++/4.8.2</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include/c++/4.8.2/xtensa-lx106-elf</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include</Value>
@@ -191,7 +193,7 @@
     <VMSETTING_IncludePaths>D:/MY/Proect/Arduino/libraries/ArduinoJson-master;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/ArduinoOTA;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/DNSServer/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/EEPROM;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/ESP8266HTTPClient/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/ESP8266HTTPUpdateServer/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/ESP8266mDNS;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/ESP8266WebServer/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/ESP8266WiFi/src;C:/Program Files (x86)/Atmel/Studio/7.0/Extensions/f4eelstf.qaj/Micro Platforms/visualmicro/ide-atmel/libraries;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries;D:/MY/Proect/Arduino/libraries;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/cores/esp8266;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/cores/esp8266/libb64;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/cores/esp8266/spiffs;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/cores/esp8266/umm_malloc;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/d1_mini;../../../WebServerXK3118T1;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/tools/sdk/include;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/tools/sdk/lwip/include;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_d1_mini/Release/core;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include/c++/4.8.2;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include/c++/4.8.2/xtensa-lx106-elf;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/lib/gcc/xtensa-lx106-elf/4.8.2/include;D:/MY/Proect/Arduino/libraries/Rtc_by_Makuna/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/Wire;{build.path}/core;C:/Program Files (x86)/Arduino/libraries;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/d1;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_d1_mini/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_d1/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/HX711ProUSB/leonardo/Debug/core;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/generic;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/thing;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_generic/Release/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_thing/Release/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_coredev/Release/core;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/nodemcu;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_nodemcu/Release/core;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/phoenix_v1;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_generic/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_phoenix_v1/Debug/core;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/wifinfo;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_thing/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_wifinfo/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_coredev/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_nodemcuv2/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/DNSServerScale/esp8266_d1_mini/Debug/core;C:/Users/Kostya/Documents/Arduino/libraries/ArduinoJson/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ArduinoOTA;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/DNSServer/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/EEPROM;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266HTTPClient/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266HTTPUpdateServer/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266mDNS;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266WebServer/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266WiFi/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries;C:/Users/Kostya/Documents/Arduino/libraries;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/cores/esp8266;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/cores/esp8266/libb64;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/cores/esp8266/spiffs;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/cores/esp8266/umm_malloc;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/variants/generic;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/tools/sdk/include;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/tools/sdk/lwip/include;C:/Users/Kostya/Documents/Arduino/libraries/Rtc_by_Makuna/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/Wire;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerHX711/esp8266_generic/Release/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_generic/Release;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266httpUpdate/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/variants/d1_mini;</VMSETTING_IncludePaths>
     <VisualMicroSettings>
       <VisualMicroSettings>
-        <arduino.upload.port>COM4</arduino.upload.port>
+        <arduino.upload.port>COM5</arduino.upload.port>
         <arduino.board.name>esp8266_generic</arduino.board.name>
         <arduino.board.desc>Generic ESP8266 Module</arduino.board.desc>
         <arduino.board.property_bag>name=Generic ESP8266 Module
@@ -531,7 +533,7 @@ build.arch=ESP8266
         <visualmicro.application.name>arduino16x</visualmicro.application.name>
         <visualmicro.package.name>esp8266</visualmicro.package.name>
         <visualmicro.platform.name>esp8266</visualmicro.platform.name>
-        <debug.local.portname>COM4</debug.local.portname>
+        <debug.local.portname>COM5</debug.local.portname>
         <debug.view.AnalogPins>
         </debug.view.AnalogPins>
         <custom_esp8266_d1_mini_FlashSize>4M1M</custom_esp8266_d1_mini_FlashSize>
@@ -546,8 +548,8 @@ build.arch=ESP8266
         <custom_esp8266_generic_FlashFreq>80</custom_esp8266_generic_FlashFreq>
         <custom_esp8266_generic_FlashMode>qio</custom_esp8266_generic_FlashMode>
         <vm.upload.useprogrammer>0</vm.upload.useprogrammer>
-        <custom_esp8266_generic_Debug>Disabled</custom_esp8266_generic_Debug>
-        <debug.remote.portname>Serial</debug.remote.portname>
+        <custom_esp8266_generic_Debug>Serial</custom_esp8266_generic_Debug>
+        <debug.remote.portname>Serial1</debug.remote.portname>
         <custom_esp8266_generic_CpuFrequency>160</custom_esp8266_generic_CpuFrequency>
       </VisualMicroSettings>
     </VisualMicroSettings>
@@ -580,7 +582,6 @@ build.arch=ESP8266
   <armgcc.compiler.directories.IncludePaths>
     <ListValues>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266WiFi/src</Value>
-      <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266mDNS</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266WebServer/src</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/DNSServer/src</Value>
       <Value>C:/Users/Kostya/Documents/Arduino/libraries/ArduinoJson/src</Value>
@@ -590,6 +591,7 @@ build.arch=ESP8266
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/Wire</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266HTTPUpdateServer/src</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266httpUpdate/src</Value>
+      <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266mDNS</Value>
       <Value>C:/Program Files (x86)/Arduino/libraries</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries</Value>
       <Value>C:/Users/Kostya/Documents/Arduino/libraries</Value>
@@ -601,6 +603,7 @@ build.arch=ESP8266
       <Value>../../../WebServerXK3118T1</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/tools/sdk/include</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/tools/sdk/lwip/include</Value>
+      <Value>C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerHX711/esp8266_generic/Release/core</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include/c++/4.8.2</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include/c++/4.8.2/xtensa-lx106-elf</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include</Value>
@@ -631,7 +634,6 @@ build.arch=ESP8266
   <armgcccpp.compiler.directories.IncludePaths>
     <ListValues>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266WiFi/src</Value>
-      <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266mDNS</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266WebServer/src</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/DNSServer/src</Value>
       <Value>C:/Users/Kostya/Documents/Arduino/libraries/ArduinoJson/src</Value>
@@ -641,6 +643,7 @@ build.arch=ESP8266
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/Wire</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266HTTPUpdateServer/src</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266httpUpdate/src</Value>
+      <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266mDNS</Value>
       <Value>C:/Program Files (x86)/Arduino/libraries</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries</Value>
       <Value>C:/Users/Kostya/Documents/Arduino/libraries</Value>
@@ -652,6 +655,7 @@ build.arch=ESP8266
       <Value>../../../WebServerXK3118T1</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/tools/sdk/include</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/tools/sdk/lwip/include</Value>
+      <Value>C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerHX711/esp8266_generic/Release/core</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include/c++/4.8.2</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include/c++/4.8.2/xtensa-lx106-elf</Value>
       <Value>C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include</Value>
@@ -689,7 +693,7 @@ build.arch=ESP8266
     <VMSETTING_IncludePaths>D:/MY/Proect/Arduino/libraries/ArduinoJson-master;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/ArduinoOTA;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/DNSServer/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/EEPROM;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/ESP8266HTTPClient/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/ESP8266HTTPUpdateServer/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/ESP8266mDNS;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/ESP8266WebServer/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/ESP8266WiFi/src;C:/Program Files (x86)/Atmel/Studio/7.0/Extensions/f4eelstf.qaj/Micro Platforms/visualmicro/ide-atmel/libraries;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries;D:/MY/Proect/Arduino/libraries;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/cores/esp8266;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/cores/esp8266/libb64;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/cores/esp8266/spiffs;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/cores/esp8266/umm_malloc;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/d1_mini;../../../WebServerXK3118T1;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/tools/sdk/include;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/tools/sdk/lwip/include;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_d1_mini/Release/core;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include/c++/4.8.2;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include/c++/4.8.2/xtensa-lx106-elf;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/xtensa-lx106-elf/include;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/lib/gcc/xtensa-lx106-elf/4.8.2/include;D:/MY/Proect/Arduino/libraries/Rtc_by_Makuna/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/Wire;{build.path}/core;C:/Program Files (x86)/Arduino/libraries;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/d1;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_d1_mini/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_d1/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/HX711ProUSB/leonardo/Debug/core;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/generic;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/thing;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_generic/Release/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_thing/Release/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_coredev/Release/core;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/nodemcu;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_nodemcu/Release/core;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/phoenix_v1;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_generic/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_phoenix_v1/Debug/core;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0/variants/wifinfo;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_thing/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_wifinfo/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_coredev/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_nodemcuv2/Debug/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/DNSServerScale/esp8266_d1_mini/Debug/core;C:/Users/Kostya/Documents/Arduino/libraries/ArduinoJson/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ArduinoOTA;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/DNSServer/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/EEPROM;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266HTTPClient/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266HTTPUpdateServer/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266mDNS;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266WebServer/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266WiFi/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries;C:/Users/Kostya/Documents/Arduino/libraries;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/cores/esp8266;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/cores/esp8266/libb64;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/cores/esp8266/spiffs;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/cores/esp8266/umm_malloc;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/variants/generic;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/tools/sdk/include;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/tools/sdk/lwip/include;C:/Users/Kostya/Documents/Arduino/libraries/Rtc_by_Makuna/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/Wire;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerHX711/esp8266_generic/Release/core;C:/Users/Kostya/AppData/Local/Temp/VMBuilds/WebServerXK3118T1/esp8266_generic/Release;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/libraries/ESP8266httpUpdate/src;C:/Users/Kostya/AppData/Local/arduino15/packages/esp8266/hardware/esp8266/2.3.0-rc2/variants/d1_mini;</VMSETTING_IncludePaths>
     <VisualMicroSettings>
       <VisualMicroSettings>
-        <arduino.upload.port>COM4</arduino.upload.port>
+        <arduino.upload.port>COM5</arduino.upload.port>
         <arduino.board.name>esp8266_generic</arduino.board.name>
         <arduino.board.desc>Generic ESP8266 Module</arduino.board.desc>
         <arduino.board.property_bag>name=Generic ESP8266 Module
@@ -1029,7 +1033,7 @@ build.arch=ESP8266
         <visualmicro.application.name>arduino16x</visualmicro.application.name>
         <visualmicro.package.name>esp8266</visualmicro.package.name>
         <visualmicro.platform.name>esp8266</visualmicro.platform.name>
-        <debug.local.portname>COM4</debug.local.portname>
+        <debug.local.portname>COM5</debug.local.portname>
         <debug.view.AnalogPins>
         </debug.view.AnalogPins>
         <custom_esp8266_d1_mini_FlashSize>4M1M</custom_esp8266_d1_mini_FlashSize>
@@ -1044,8 +1048,8 @@ build.arch=ESP8266
         <custom_esp8266_generic_FlashFreq>80</custom_esp8266_generic_FlashFreq>
         <custom_esp8266_generic_FlashMode>qio</custom_esp8266_generic_FlashMode>
         <vm.upload.useprogrammer>0</vm.upload.useprogrammer>
-        <custom_esp8266_generic_Debug>Disabled</custom_esp8266_generic_Debug>
-        <debug.remote.portname>Serial</debug.remote.portname>
+        <custom_esp8266_generic_Debug>Serial</custom_esp8266_generic_Debug>
+        <debug.remote.portname>Serial1</debug.remote.portname>
         <custom_esp8266_generic_CpuFrequency>160</custom_esp8266_generic_CpuFrequency>
       </VisualMicroSettings>
     </VisualMicroSettings>
@@ -1075,6 +1079,12 @@ build.arch=ESP8266
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="DateTime.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="ESP8266NetBIOS.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="ESP8266NetBIOS.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="handleHttp.cpp">
@@ -1117,6 +1127,9 @@ build.arch=ESP8266
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Terminal.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Terminals.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="tools.cpp">

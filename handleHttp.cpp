@@ -1,16 +1,15 @@
-﻿#include <EEPROM.h>
-#include "handleHttp.h"
+﻿#include "handleHttp.h"
 #include "tools.h"
 #include "Core.h"
 #include "DateTime.h"
 #include "BrowserServer.h"
 
-void handleScaleProp(){
+void handleScaleProp(){	
 	if (!browserServer.isAuthentified())
-	return browserServer.requestAuthentication();
+		return browserServer.requestAuthentication();
 	String values = "";
-	values += "id_date|" + getDateTime() + "|div\n";
-	values += "id_local_host|http://"+String(MY_HOST_NAME)+".local|div\n";
+	values += "id_date|" + getDateTime() + "|div\n";	
+	values += "id_local_host|"+String(MY_HOST_NAME)+"/|div\n";
 	values += "id_ap_ssid|" + String(SOFT_AP_SSID) + "|div\n";
 	values += "id_ap_ip|" + toStringIp(WiFi.softAPIP()) + "|div\n";
 	values += "id_ip|" + toStringIp(WiFi.localIP()) + "|div\n";

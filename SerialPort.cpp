@@ -6,12 +6,12 @@
 #include "SerialPort.h"
 #include "DateTime.h"
 #include "BrowserServer.h"
-#include "Terminal.h"
+#include "Terminals.h"
 
-//SerialPortClass SerialPort(UART0);
+SerialPortClass SerialPort(UART0);
 
 
-SerialPortClass::SerialPortClass() : HardwareSerial(UART0) {
+SerialPortClass::SerialPortClass(int port) : HardwareSerial(port) {
 	_server = NULL;
 	_username = NULL;
 	_password = NULL;
@@ -23,6 +23,7 @@ SerialPortClass::SerialPortClass() : HardwareSerial(UART0) {
 void SerialPortClass::init(){
 	flush();
 	begin(constrain(_port.speed, 600, 9600));
+	TerminalController.identify(_port.terminal);
 }
 
 void SerialPortClass::setup(BrowserServerClass *server, const char * username, const char * password){	
@@ -35,27 +36,34 @@ void SerialPortClass::setup(BrowserServerClass *server, const char * username, c
 	//Serial.setTimeout(100);
 	_server->on("/wt", [&](){
 		char buffer[10];
-		dtostrf(getWeight(), 6-getAccuracy(), getAccuracy(), buffer);
+		float w = TerminalController.getCurrent()->getWeight();
+		dtostrf(w, 6-getAccuracy(), getAccuracy(), buffer);
 		_server->send(200, "text/plain", String("{\"w\":\""+String(buffer)+"\",\"c\":"+String(CORE.getCharge())+"}"));
-		//taskPower.updateCache();
+		CORE.detectStable(w);	
+		taskPower.updateCache();
 	});
 	_server->on("/setport.html",HTTP_POST, [&]() {
 		if (!_server->isAuthentified())
 			return _server->requestAuthentication();
 		_saveValuePortHttp();
-		//taskPower.pause();
+		taskPower.updateCache();
 	});
-	_server->on("/trm",[&](){
-			if(_server->hasArg("trm")){
-				int t = _server->arg("trm").toInt();
-				port->init();
-				port = Terminals.getIndexOf(t);
-				//port->println(t);
-				//port->println(_server->arg("trm"));
-				return _server->send(200,"text/html","terminal ok");
+	/*_server->on("/trm",[&](){
+			String message = "";
+			for (int i; i<TERMINAL_MAX; i++){
+				message += String(TerminalController.getIndexOf(i)->getName()) + " " + String(i) + "\n";
+			}
+			_server->send(200,"text/html","ok");
+	});*/
+	_server->on("/trm",HTTP_GET,[&](){
+			if(_server->hasArg("trm")){				
+				TerminalController.identify(_server->arg("trm").toInt());
+				_port.terminal = TerminalController.getIndex();
+				savePort();				
+				return _server->send(200,"text/html","terminal " + TerminalController.getCurrent()->getName());
 			}
 			_server->send(400, "text/html", "Error");
-		});		
+	});		
 }
 
 /*! Получаем значения отправленые клиентом */

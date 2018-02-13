@@ -58,10 +58,10 @@ class SerialPortClass : public HardwareSerial/*, public ScaleMemClass*/{
 		//bool loadPortValue();		
 
 	public:			
-		SerialPortClass();
+		SerialPortClass(int port);
 		virtual ~SerialPortClass(){};
 		void init();	
-		virtual void handlePort()=0;	
+		//virtual void handlePort()=0;	
 		void setup(BrowserServerClass *server, const char * username, const char * password);
 		void getScaleSettingsValue();
 		bool savePort();	
@@ -75,7 +75,7 @@ class SerialPortClass : public HardwareSerial/*, public ScaleMemClass*/{
 void handlePortSave();
 //void powerOff();
 
-//extern SerialPortClass SerialPort;
+extern SerialPortClass SerialPort;
 extern TaskController taskController;				/*  */
 extern Task taskBlink;								/*  */
 extern Task taskBattery;							/*  */

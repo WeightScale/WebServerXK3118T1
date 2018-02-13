@@ -40,16 +40,16 @@ extern Task taskPower;
 extern void connectWifi();
 
 typedef struct {	
-	bool autoIp = true;
-	String scaleName= "";
-	String scalePass= "";
-	String scaleLanIp = "";
-	String scaleGateway = "";
-	String scaleSubnet = "";
-	String scaleWlanSSID= "";
-	String scaleWlanKey= "";
-	String hostUrl= "";
-	String hostPin= "";
+	bool autoIp;
+	String scaleName;
+	String scalePass;
+	String scaleLanIp;
+	String scaleGateway;
+	String scaleSubnet;
+	String scaleWlanSSID;
+	String scaleWlanKey;
+	String hostUrl;
+	String hostPin;
 	int timeout;
 	int bat_max;	
 } settings_t;
@@ -76,7 +76,7 @@ class CoreClass /*: public HX711, public ScaleMemClass*/{
 		String& getGateway(){return _settings.scaleGateway;};
 		void setSSID(const String& ssid){_settings.scaleWlanSSID = ssid;};
 		void setPASS(const String& pass){_settings.scaleWlanKey = pass;};	
-		String getPASS(){return _settings.scaleWlanKey;};
+		String& getPASS(){return _settings.scaleWlanKey;};
 		bool saveEvent(const String&, const String&);
 		String getIp();
 		bool eventToServer(const String&, const String&, const String&);

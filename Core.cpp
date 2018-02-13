@@ -4,7 +4,7 @@
 #include "Core.h"
 #include "DateTime.h"
 #include "BrowserServer.h"
-#include "Terminal.h"
+#include "SerialPort.h"
 
 CoreClass CORE;
 
@@ -81,36 +81,20 @@ bool CoreClass::saveEvent(const String& event, const String& value) {
 	return true;
 }
 
-String CoreClass::getIp() {
-	WiFiClient client ;
-	String ip = "";
-	if (client.connect("api.ipify.org", 80)) {
-		client.println("GET / HTTP/1.0");
-		client.println("Host: api.ipify.org");
-		client.println();
-		delay(50);
-		while(client.available()){
-			String ip = client.readStringUntil('\n');
-		}		
-	}
-	client.stop();	
-	return ip;
-}
 
-/*
-String CoreClass::getIp(){
-	
+
+String CoreClass::getIp(){	
 	HTTPClient http;	
 	http.begin("http://sdb.net.ua/ip.php");
-	http.setTimeout(2000);	
+	http.setTimeout(_settings.timeout);	
 	int httpCode = http.GET();
-	String ip = "";	
+	String ip = http.getString();
+	http.end();	
 	if(httpCode == HTTP_CODE_OK){		
-		ip = http.getString();
-	}
-	http.end();
-	return ip;
-}*/
+		return ip;
+	}	
+	return String(httpCode);
+}
 
 /* */	
 bool CoreClass::eventToServer(const String& date, const String& type, const String& value){
@@ -131,24 +115,30 @@ bool CoreClass::eventToServer(const String& date, const String& type, const Stri
 
 void CoreClass::saveValueSettingsHttp(const char * text) {	
 		String message = " ";
-		if (browserServer.hasArg("ssid")){
+		if (browserServer.hasArg("ssids")){
+			_settings.autoIp = true;
+			_settings.scaleWlanSSID = browserServer.urldecode(browserServer.arg("ssids"));
+			_settings.scaleWlanKey = browserServer.urldecode(browserServer.arg("key"));	
+			goto save;
+		}else if (browserServer.hasArg("ssid")){
 			_settings.autoIp = false;
 			if (browserServer.hasArg("auto"))
 				_settings.autoIp = true;
 			else
-				_settings.autoIp = false;				 			
+				_settings.autoIp = false;
 			_settings.scaleLanIp = browserServer.urldecode(browserServer.arg("lan_ip"));			
 			_settings.scaleGateway = browserServer.urldecode(browserServer.arg("gateway"));
-			_settings.scaleSubnet = browserServer.urldecode(browserServer.arg("subnet"));
+			_settings.scaleSubnet = browserServer.urldecode(browserServer.arg("subnet"));		
 			_settings.scaleWlanSSID = browserServer.urldecode(browserServer.arg("ssid"));
 			_settings.scaleWlanKey = browserServer.urldecode(browserServer.arg("key"));	
 			goto save;
 		}
+		
 		if(browserServer.hasArg("data")){
 			DateTimeClass DateTime(browserServer.arg("data"));
 			Rtc.SetDateTime(DateTime.toRtcDateTime());
 			String message = getDateTime();
-			browserServer.send(200, "text/html", message);
+			browserServer.send(200, TEXT_HTML, message);
 			return;	
 		}
 		if (browserServer.hasArg("host")){
@@ -163,9 +153,9 @@ void CoreClass::saveValueSettingsHttp(const char * text) {
 		}		
 		save:
 		if (saveSettings()){
-			return browserServer.send(200, "text/html", text);
+			return browserServer.send(200, TEXT_HTML, text);
 		}
-		browserServer.send(400, "text/html", text);
+		browserServer.send(400, TEXT_HTML, text);
 }
 
 String CoreClass::getHash(const String& code, const String& date, const String& type, const String& value){
@@ -188,9 +178,9 @@ String CoreClass::getHash(const String& code, const String& date, const String& 
 }
 
 int CoreClass::getBattery(int times){
-	_charge = getADC(times);	
+	_charge = getADC(times);
 	_charge = constrain(_charge, MIN_CHG, _settings.bat_max);
-	_charge = map(_charge, MIN_CHG, _settings.bat_max, 0, 100); // ошибка	
+	_charge = map(_charge, MIN_CHG, _settings.bat_max, 0, 100);
 	return _charge;	
 }
 
@@ -292,7 +282,7 @@ void CoreClass::detectStable(double w){
 	static double weight_temp;
 	static unsigned char stable_num;
 	static bool isStable;
-	if(abs(w) > getStableStep()){
+	if(abs(w) > 0){
 		if (weight_temp == w) {
 			//if (stable_num <= STABLE_NUM_MAX){
 				if (stable_num > STABLE_NUM_MAX) {
@@ -313,7 +303,7 @@ void CoreClass::detectStable(double w){
 }
 
 void powerOff(){
-	port->end(); /// Выключаем port
+	SerialPort.end(); /// Выключаем port
 	digitalWrite(EN_NCP, LOW); /// Выключаем стабилизатор
 	ESP.reset();
 }

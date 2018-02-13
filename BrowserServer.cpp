@@ -9,9 +9,8 @@
 #include "HttpUpdater.h"
 
 static const char netIndex[]= /*PROGMEM =*/ R"(	<html><meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1'/>
-												<body><form method='POST'>
-												<input type='checkbox' name='auto'><br/>												
-												<input name='ssid'><br/>
+												<body><form method='POST'>																								
+												<input name='ssids'><br/>
 												<input type='password' name='key'><br/>
 												<input type='submit' value='СОХРАНИТЬ'>
 												</form></body></html>)";
@@ -21,8 +20,8 @@ static const char netIndex[]= /*PROGMEM =*/ R"(	<html><meta name='viewport' cont
 IPAddress apIP(192,168,4,1);
 IPAddress netMsk(255, 255, 255, 0);
 
-IPAddress lanIp(192,168,1,100);			// Надо сделать настройки ip адреса
-IPAddress gateway(192,168,1,1);
+IPAddress lanIp;			// Надо сделать настройки ip адреса
+IPAddress gateway;
 
 BrowserServerClass browserServer(80);
 DNSServer dnsServer;
@@ -53,27 +52,13 @@ void BrowserServerClass::init(){
 		taskPower.resume();
 	});
 	on("/rc", reconnectWifi);									/* Пересоединиться по WiFi. */
-	on("/sn",HTTP_GET,[&](){
-		if (!this->checkAdminAuth())
-			return this->requestAuthentication();
-		send(200, "text/html", netIndex);
-	});
-	on("/sn",HTTP_POST,[&](){
-		CORE.saveValueSettingsHttp(successResponse);
-		delay(100);
-		client().stop();
-		ESP.restart();
-	});		
+	on("/sn",HTTP_GET,handleAccessPoint);						/* Установить Настройки точки доступа */
+	on("/sn",HTTP_POST, handleSetAccessPoint);					/* Установить Настройки точки доступа */
 	on("/settings.html", handleSettingsHtml);					/* Открыть страницу настроек или сохранить значения. */	
 	on("/settings.json", handleFileReadAuth);
-	on("/sv", handleScaleProp);									/* Получить значения. */
-	
+	on("/sv", handleScaleProp);									/* Получить значения. */	
 	//list directory
-	on("/list", HTTP_GET, [&](){
-		if (!checkAdminAuth())
-			return requestAuthentication(); 
-		handleFileList();
-	});
+	on("/list", HTTP_GET, handleFileList);
 	//load editor
 	on("/editor.html", HTTP_GET, [&](){
 		if (!checkAdminAuth())
@@ -82,28 +67,15 @@ void BrowserServerClass::init(){
 			send(404, "text/plain", "FileNotFound");
 	});
 	//create file
-	on("/edit", HTTP_PUT, [&](){
-		if (!checkAdminAuth())
-			return requestAuthentication();
-		handleFileCreate();
-	});
+	on("/edit", HTTP_PUT, handleFileCreate);
 	//delete file
-	on("/edit", HTTP_DELETE, [&](){
-		if (!checkAdminAuth())
-			return requestAuthentication();
-		handleFileDelete();
-	});
+	on("/edit", HTTP_DELETE, handleFileDelete);
 	on("/edit", HTTP_POST, [&](){ 
 		if (!checkAdminAuth())
 			return requestAuthentication();
 		send(200, "text/plain", ""); }, handleFileUpload);
 	
-	on("/admin.html", [&]() {
-		if (!checkAdminAuth())
-			return requestAuthentication();
-		send_wwwauth_configuration_html();
-		taskPower.pause();
-	});	
+	on("/admin.html", handleAuthConfiguration);
 	on("/secret.json",handleFileReadAdmin);
 	onNotFound([&](){
 		if(isValidType(uri())){
@@ -146,25 +118,16 @@ void send_update_firmware_values_html() {
 }*/
 
 void BrowserServerClass::send_wwwauth_configuration_html() {
-	if (args() > 0){  // Save Settings
-	
+	if (args() > 0){  // Save Settings	
 		_httpAuth.auth = false;
 		//String temp = "";
-		for (uint8_t i = 0; i < args(); i++) {
-			if (argName(i) == "wwwuser") {
-				_httpAuth.wwwUsername = urldecode(arg(i));
-				continue;
-			}
-			if (argName(i) == "wwwpass") {
-				_httpAuth.wwwPassword = urldecode(arg(i));
-				continue;
-			}
-			if (argName(i) == "wwwauth") {
+		if (hasArg("wwwuser")){
+			_httpAuth.wwwUsername = arg("wwwuser");
+			_httpAuth.wwwPassword = arg("wwwpass");
+			if (hasArg("wwwauth")){
 				_httpAuth.auth = true;
-				continue;
-			}
-		}
-
+			}	
+		}		
 		_saveHTTPAuth();
 	}
 	handleFileRead(uri());
@@ -286,9 +249,48 @@ void setUpdateMD5() {
 				continue;
 			}
 		}
-		browserServer.send(200, "text/html", "OK --> MD5: " + _browserMD5);
+		browserServer.send(200, TEXT_HTML, "OK --> MD5: " + _browserMD5);
 	}
 }*/
+
+
+
+String BrowserServerClass::getContentType(String filename){
+	if(hasArg("download")) return "application/octet-stream";
+	else if(filename.endsWith(".htm")) return TEXT_HTML;
+	else if(filename.endsWith(".html")) return TEXT_HTML;
+	else if(filename.endsWith(".css")) return "text/css";
+	else if(filename.endsWith(".js")) return "application/javascript";
+	else if (filename.endsWith(".json")) return "application/json";
+	else if(filename.endsWith(".png")) return "image/png";
+	else if(filename.endsWith(".gif")) return "image/gif";
+	else if(filename.endsWith(".jpg")) return "image/jpeg";
+	else if(filename.endsWith(".ico")) return "image/x-icon";
+	else if(filename.endsWith(".xml")) return "text/xml";
+	else if(filename.endsWith(".pdf")) return "application/x-pdf";
+	else if(filename.endsWith(".zip")) return "application/x-zip";
+	else if(filename.endsWith(".gz")) return "application/x-gzip";
+	return "text/plain";
+}
+
+bool BrowserServerClass::isValidType(String filename){
+	if(filename.endsWith(".css")) return true;
+	else if(filename.endsWith(".js")) return true;
+	else if(filename.endsWith(".png")) return true;
+	else if(filename.endsWith(".ico")) return true;
+	else if(filename.endsWith(".json")) return true;
+	else if(filename.endsWith(".html")) return true;
+	return false;	
+}
+
+bool BrowserServerClass::isAuthentified(){
+	if (!authenticate(CORE.getNameAdmin().c_str(), CORE.getPassAdmin().c_str())){
+		if (!checkAdminAuth()){
+			return false;
+		}
+	}
+	return true;
+}
 
 bool handleFileReadAdmin(){
 	if (!browserServer.checkAdminAuth()){
@@ -342,6 +344,8 @@ void handleFileUpload(){
 }
 
 void handleFileDelete(){
+	if (!browserServer.checkAdminAuth())
+		return browserServer.requestAuthentication();
 	if(browserServer.args() == 0) 
 		return browserServer.send(500, "text/plain", "BAD ARGS");
 	String path = browserServer.arg(0);
@@ -355,6 +359,8 @@ void handleFileDelete(){
 }
 
 void handleFileCreate(){
+	if (!browserServer.checkAdminAuth())
+		return browserServer.requestAuthentication();
 	if(browserServer.args() == 0)
 		return browserServer.send(500, "text/plain", "BAD ARGS");
 	String path = browserServer.arg(0);
@@ -372,6 +378,8 @@ void handleFileCreate(){
 }
 
 void handleFileList() {	
+	if (!browserServer.checkAdminAuth())
+		return browserServer.requestAuthentication();
 	if(!browserServer.hasArg("dir")) {
 		browserServer.send(500, "text/plain", "BAD ARGS"); 
 		return;
@@ -398,41 +406,21 @@ void handleFileList() {
 	browserServer.send(200, "text/json", output);
 }
 
-String BrowserServerClass::getContentType(String filename){
-	if(hasArg("download")) return "application/octet-stream";
-	else if(filename.endsWith(".htm")) return "text/html";
-	else if(filename.endsWith(".html")) return "text/html";
-	else if(filename.endsWith(".css")) return "text/css";
-	else if(filename.endsWith(".js")) return "application/javascript";
-	else if (filename.endsWith(".json")) return "application/json";
-	else if(filename.endsWith(".png")) return "image/png";
-	else if(filename.endsWith(".gif")) return "image/gif";
-	else if(filename.endsWith(".jpg")) return "image/jpeg";
-	else if(filename.endsWith(".ico")) return "image/x-icon";
-	else if(filename.endsWith(".xml")) return "text/xml";
-	else if(filename.endsWith(".pdf")) return "application/x-pdf";
-	else if(filename.endsWith(".zip")) return "application/x-zip";
-	else if(filename.endsWith(".gz")) return "application/x-gzip";
-	return "text/plain";
+void handleAccessPoint(){
+	if (!browserServer.isAuthentified())
+		return browserServer.requestAuthentication();
+	browserServer.send(200, TEXT_HTML, netIndex);	
 }
 
-bool BrowserServerClass::isValidType(String filename){
-	if(filename.endsWith(".css")) return true;
-	else if(filename.endsWith(".js")) return true;
-	else if(filename.endsWith(".png")) return true;
-	else if(filename.endsWith(".ico")) return true;
-	else if(filename.endsWith(".json")) return true;
-	else if(filename.endsWith(".html")) return true;
-	return false;	
+void handleSetAccessPoint(){
+	CORE.saveValueSettingsHttp(successResponse);
+	delay(100);
+	browserServer.client().stop();
+	ESP.restart();	
 }
 
-bool BrowserServerClass::isAuthentified(){
-	if (!authenticate(CORE.getNameAdmin().c_str(), CORE.getPassAdmin().c_str())){
-		if (!checkAdminAuth()){
-			return false;
-		}
-	}
-	return true;
+void handleAuthConfiguration(){
+	if (!browserServer.checkAdminAuth())
+		return browserServer.requestAuthentication();
+	browserServer.send_wwwauth_configuration_html();
 }
-
-
