@@ -119,14 +119,14 @@ void send_update_firmware_values_html() {
 
 void BrowserServerClass::send_wwwauth_configuration_html() {
 	if (args() > 0){  // Save Settings	
-		_httpAuth.auth = false;
+		//_httpAuth.auth = false;
 		//String temp = "";
 		if (hasArg("wwwuser")){
 			_httpAuth.wwwUsername = arg("wwwuser");
 			_httpAuth.wwwPassword = arg("wwwpass");
-			if (hasArg("wwwauth")){
+			/*if (hasArg("wwwauth")){
 				_httpAuth.auth = true;
-			}	
+			}*/	
 		}		
 		_saveHTTPAuth();
 	}
@@ -138,7 +138,7 @@ bool BrowserServerClass::_saveHTTPAuth() {
 	DynamicJsonBuffer jsonBuffer(256);
 	//StaticJsonBuffer<256> jsonBuffer;
 	JsonObject& json = jsonBuffer.createObject();
-	json["auth"] = _httpAuth.auth;
+	//json["auth"] = _httpAuth.auth;
 	json["user"] = _httpAuth.wwwUsername;
 	json["pass"] = _httpAuth.wwwPassword;
 
@@ -156,7 +156,7 @@ bool BrowserServerClass::_saveHTTPAuth() {
 }
 
 bool BrowserServerClass::_downloadHTTPAuth() {
-	_httpAuth.auth = false;
+	//_httpAuth.auth = false;
 	_httpAuth.wwwUsername = "sa";
 	_httpAuth.wwwPassword = "343434";
 	File configFile = SPIFFS.open(SECRET_FILE, "r");
@@ -176,18 +176,18 @@ bool BrowserServerClass::_downloadHTTPAuth() {
 	if (!json.success()) {
 		return false;
 	}
-	_httpAuth.auth = json["auth"];
+	//_httpAuth.auth = json["auth"];
 	_httpAuth.wwwUsername = json["user"].as<String>();
 	_httpAuth.wwwPassword = json["pass"].as<String>();
 	return true;
 }
 
 bool BrowserServerClass::checkAdminAuth() {
-	if (!_httpAuth.auth) {
-		return true;
-	} else {
+	//if (!_httpAuth.auth) {
+	//	return true;
+	//} else {
 		return authenticate(_httpAuth.wwwUsername.c_str(), _httpAuth.wwwPassword.c_str());
-	}
+	//}
 }
 
 /*

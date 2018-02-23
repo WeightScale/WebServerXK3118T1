@@ -1,5 +1,5 @@
-#define SKETCH_VERSION "web_terminal.001"
-#define SPIFFS_VERSION "web_terminal.001"
+#define SKETCH_VERSION "web_terminal.002"
+#define SPIFFS_VERSION "web_terminal.002"
 
 /*
 Формат файла

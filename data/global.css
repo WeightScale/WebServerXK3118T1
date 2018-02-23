@@ -3,7 +3,7 @@ html{
 }
 body{
     font-family: Arial, sans-serif;
-    width: 320px;
+    width: 330px;
     height: auto;
     margin-right: auto;
     margin-left: auto;
@@ -40,15 +40,12 @@ footer{
     text-decoration: none;
     text-transform: uppercase;
 }
-
 .btn:hover, .btn:focus {
     color: white;
 }
-
 .btn--s {
     padding: 0.5em;
 }
-
 .btn--m {
     padding: 0.5em;
     width: 100%;

@@ -13,7 +13,6 @@
         #weight_style{
             background: #fff;
             font-size: 80px;
-            //font-family: Monaco, Courier, monospace;
             font-family: Arial,sans-serif;
             color: #618ad2;
             margin-left: auto;
@@ -40,22 +39,25 @@
                     try{
                         request = new ActiveXObject("Microsoft.XMLHTTP");
                     }catch (e){
-                        // Something went wrong
                         alert("Your browser broke!");
                         return false;
                     }
                 }
-
             }
             request.onreadystatechange = function () {
                 if (this.readyState === 4 && this.status === 200){
                     if (this.responseText !== null){
-                        var json = JSON.parse(request.responseText);
+                        var json = JSON.parse(requestWeight.responseText);
                         document.getElementById('weight').innerHTML = json.w;
                         document.getElementById('charge_id').innerHTML = json.c+'%';
+                        if(json.s){
+                            document.getElementById('weight_style').setAttribute("style", "background: #fff;");
+                        }else{
+                            document.getElementById('weight_style').setAttribute("style", "background: #C4C4C4;");
+                        }
                         getWeight();
                     }
-                }    
+                }
             };
             if((navigator.userAgent.indexOf("MSIE") !== -1 ) || (!!document.documentMode === true )){
                 request.open('GET','/wt?buster='+new Date().getTime(),true);

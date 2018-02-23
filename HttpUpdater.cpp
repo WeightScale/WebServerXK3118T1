@@ -86,15 +86,15 @@ void handleStartUpdate(){
 		if(!Update.begin(size, command)){//start with max available size
 			setUpdaterError();
 		}
-		} else if(httpUpdater.getAuthenticated() && upload.status == UPLOAD_FILE_WRITE && !updaterError.length()){
+	} else if(httpUpdater.getAuthenticated() && upload.status == UPLOAD_FILE_WRITE && !updaterError.length()){
 		if(Update.write(upload.buf, upload.currentSize) != upload.currentSize){
 			setUpdaterError();
 		}
-		} else if(httpUpdater.getAuthenticated() && upload.status == UPLOAD_FILE_END && !updaterError.length()){
+	} else if(httpUpdater.getAuthenticated() && upload.status == UPLOAD_FILE_END && !updaterError.length()){
 		if(!Update.end(true)){ //true to set the size to the current progress
 			setUpdaterError();
 		}
-		} else if(httpUpdater.getAuthenticated() && upload.status == UPLOAD_FILE_ABORTED){
+	} else if(httpUpdater.getAuthenticated() && upload.status == UPLOAD_FILE_ABORTED){
 		Update.end();
 	}
 	delay(0);	

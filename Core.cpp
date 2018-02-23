@@ -21,6 +21,8 @@ void CoreClass::begin(){
 }
 
 bool CoreClass::saveEvent(const String& event, const String& value) {
+	String date = getDateTime();
+	bool flag = WiFi.status() == WL_CONNECTED?eventToServer(date, event, value):false;
 	File readFile = SPIFFS.open("/events.json", "r");
     if (!readFile) {        
         readFile.close();
@@ -30,11 +32,8 @@ bool CoreClass::saveEvent(const String& event, const String& value) {
 			return false;	
 		}
     }
-	String date = getDateTime();
-    size_t size = readFile.size(); 
 	
-	bool flag = WiFi.status() == WL_CONNECTED?eventToServer(date, event, value):false;
-	
+    size_t size = readFile.size(); 	
     std::unique_ptr<char[]> buf(new char[size]);
     readFile.readBytes(buf.get(), size);	
     readFile.close();
@@ -281,14 +280,15 @@ bool CoreClass::_downloadSettings() {
 void CoreClass::detectStable(double w){
 	static double weight_temp;
 	static unsigned char stable_num;
-	static bool isStable;
-	if(abs(w) > 0){
+	//static bool isStable;	
 		if (weight_temp == w) {
 			//if (stable_num <= STABLE_NUM_MAX){
 				if (stable_num > STABLE_NUM_MAX) {
-					if (!isStable){
-						saveEvent("weight", String(w)+"_kg");
-						isStable = true;
+					if (!SerialPort.getStableWeight()){						
+						if(abs(w) > 0){
+							saveEvent("weight", String(w)+"_kg");	
+						}
+						SerialPort.setStableWeight(true);
 					}
 					return;
 				}
@@ -296,10 +296,9 @@ void CoreClass::detectStable(double w){
 			//}
 		} else { 
 			stable_num = 0;
-			isStable = false;
+			SerialPort.setStableWeight(false);
 		}
 		weight_temp = w;
-	}
 }
 
 void powerOff(){

@@ -26,7 +26,7 @@
 #define DNS_PORT 53
 
 typedef struct {
-	bool auth;
+	//bool auth;
 	String wwwUsername;
 	String wwwPassword;
 } strHTTPAuth;

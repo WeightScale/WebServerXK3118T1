@@ -38,7 +38,7 @@ void SerialPortClass::setup(BrowserServerClass *server, const char * username, c
 		char buffer[10];
 		float w = TerminalController.getCurrent()->getWeight();
 		dtostrf(w, 6-getAccuracy(), getAccuracy(), buffer);
-		_server->send(200, "text/plain", String("{\"w\":\""+String(buffer)+"\",\"c\":"+String(CORE.getCharge())+"}"));
+		_server->send(200, "text/plain", String("{\"w\":\""+String(buffer)+"\",\"c\":"+String(CORE.getCharge())+",\"s\":"+String(SerialPort.getStableWeight())+"}"));
 		CORE.detectStable(w);	
 		taskPower.updateCache();
 	});
@@ -48,6 +48,7 @@ void SerialPortClass::setup(BrowserServerClass *server, const char * username, c
 		_saveValuePortHttp();
 		taskPower.updateCache();
 	});
+	_server->on("/trm",HTTP_POST, handleValueTerminal);
 	/*_server->on("/trm",[&](){
 			String message = "";
 			for (int i; i<TERMINAL_MAX; i++){
@@ -55,7 +56,8 @@ void SerialPortClass::setup(BrowserServerClass *server, const char * username, c
 			}
 			_server->send(200,"text/html","ok");
 	});*/
-	_server->on("/trm",HTTP_GET,[&](){
+	
+	/*_server->on("/trm",HTTP_GET,[&](){
 			if(_server->hasArg("trm")){				
 				TerminalController.identify(_server->arg("trm").toInt());
 				_port.terminal = TerminalController.getIndex();
@@ -63,7 +65,7 @@ void SerialPortClass::setup(BrowserServerClass *server, const char * username, c
 				return _server->send(200,"text/html","terminal " + TerminalController.getCurrent()->getName());
 			}
 			_server->send(400, "text/html", "Error");
-	});		
+	});*/		
 }
 
 /*! Получаем значения отправленые клиентом */
@@ -75,6 +77,7 @@ void SerialPortClass::_saveValuePortHttp() {
 		_port.accuracy = _server->arg("acr").toInt();
 		flush();
 		begin(_port.speed);
+		TerminalController.identify(_port.terminal);
 	}
 	
 	if (savePort()){		
@@ -97,9 +100,9 @@ bool SerialPortClass::savePort() {
 		return false;
 	}
 	
-	json[TERMINAL_JSON] = _port.terminal;
-	json[SPEED_JSON]	= _port.speed;	
-	json[ACCURACY_JSON] = _port.accuracy;
+	json[PORT_TERMINAL_JSON] = _port.terminal;
+	json[PORT_SPEED_JSON]	= _port.speed;	
+	json[PORT_ACCURACY_JSON] = _port.accuracy;
 
 	json.printTo(portFile);
 	portFile.flush();
@@ -133,18 +136,21 @@ bool SerialPortClass::_downloadPort() {
 		return false;
 	}
 	
-	_port.terminal = json[TERMINAL_JSON];
-	_port.speed = json[SPEED_JSON];	
-	_port.accuracy = json[ACCURACY_JSON];
+	_port.terminal = json[PORT_TERMINAL_JSON];
+	_port.speed = json[PORT_SPEED_JSON];	
+	_port.accuracy = json[PORT_ACCURACY_JSON];
 	return true;
 }
 
-void SerialPortClass::parseDate(String str){
-	/*int len = str.length();	 
-	if(len > _port.lengthWord){		
-		_weight = str.substring(str.indexOf(_port.endSymbol)-_port.numberSigns, str.indexOf(_port.endSymbol)).toFloat();		
-		//detectStable();	
-	}	*/	
+void handleValueTerminal(){
+	BrowserServerClass *server = SerialPort.getServer();
+	if (!server->isAuthentified())
+		return server->requestAuthentication();
+	if (server->args() > 0){
+		if(TerminalController.getCurrent()->saveValueHttp(server))
+			return server->send(200, TEXT_HTML, "");		
+	}
+	//server->send(400, TEXT_HTML, "");
 }
 
 /*

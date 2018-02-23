@@ -3,6 +3,7 @@
 #include "Core.h"
 #include "DateTime.h"
 #include "BrowserServer.h"
+#include "Terminals.h"
 
 void handleScaleProp(){	
 	if (!browserServer.isAuthentified())
@@ -13,6 +14,7 @@ void handleScaleProp(){
 	values += "id_ap_ssid|" + String(SOFT_AP_SSID) + "|div\n";
 	values += "id_ap_ip|" + toStringIp(WiFi.softAPIP()) + "|div\n";
 	values += "id_ip|" + toStringIp(WiFi.localIP()) + "|div\n";
+	values += "id_trm|" + TerminalController.getCurrent()->getName() + "|div\n";
 	browserServer.send(200, "text/plain", values);
 }
 

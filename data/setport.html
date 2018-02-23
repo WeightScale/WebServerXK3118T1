@@ -8,6 +8,27 @@
     <title>Настройки данных</title>
     <link rel="stylesheet" type="text/css" href="global.css">
     <script>
+        var terminal;
+        function GetTerminals(){
+            var http_request = new XMLHttpRequest();
+            http_request.overrideMimeType('application/json');
+            http_request.onreadystatechange = function(){
+                if (http_request.readyState === 4  ){
+                    var json = JSON.parse(http_request.responseText);
+                    terminal = json["trm"];
+                    var select = document.getElementById("tr_id");
+                    for (var entry in terminal) {
+                        var option = document.createElement('option');
+                        option.value = entry;
+                        option.textContent = terminal[entry].name;
+                        select.appendChild(option);
+                    }
+                    GetSettings();
+                }
+            };
+            http_request.open("GET", "/terminal.json", true);
+            http_request.send(null);
+        }
         function GetSettings() {
             var http_request = new XMLHttpRequest();
             http_request.overrideMimeType('application/json');
@@ -19,7 +40,10 @@
                         if(document.getElementById(entry)!== null)
                             document.getElementById(entry).value=json[entry];
                     }
-                    //document.getElementById('end_symbol_id').value = String.fromCharCode(document.getElementById('end_symbol_id').value);
+                    var t = parseInt(document.getElementById("tr_id").value);
+                    var u = terminal[t].page;
+                    var a = document.getElementById("url_id");
+                    a.href = u;
                     document.body.style.visibility = 'visible';
                 }
             };
@@ -27,7 +51,7 @@
             http_request.send(null);
         }
         window.onload = function () {
-            GetSettings();
+            GetTerminals();
         };
         function saveValue(f){
             var form = document.getElementById(f);
@@ -44,6 +68,9 @@
             http_request.open('POST','setport.html',true);
             http_request.send(formData);
         };
+        function setUrl(i) {
+            document.getElementById("url_id").href = terminal[i].page;
+        }
     </script>
 </head>
 <body style="visibility: hidden">
@@ -68,18 +95,6 @@
                     </select>
                 </td>
             </tr>
-            <!--<tr>
-                <td>Длина слова</td>
-                <td><input type="number" title="Длина слова передачи данных без символов \x0D\x0A" id='length_word_id' name='length_word' placeholder='Длина слова'></td>
-            </tr>
-            <tr>
-                <td>Количество знаков</td>
-                <td><input type="number" title="Введите количество знаков в значении веса" id='number_signs_id' name='number_signs' placeholder='Количество знаков'></td>
-            </tr>
-            <tr>
-                <td>Конечный символ</td>
-                <td><input type="text" title="Введите символ который начинается после значения веса" maxlength="1" id='end_symbol_id' name='end_symbol' placeholder='Конечный символ'></td>
-            </tr>-->
             <tr>
                 <td>Точность измерения</td>
                 <td>
@@ -91,10 +106,17 @@
                     </select>
                 </td>
             </tr>
+            <tr>
+                <td><a id="url_id">Терминал</a></td>
+                <td>
+                    <select id="tr_id" name="trm" onchange="document.getElementById('url_id').href = terminal[this.selectedIndex].page;"></select>
+                </td>
+            </tr>
         </table>
         <a href="javascript:saveValue('form_id');">сохранить и выйти</a>
     </form>
 </fieldset>
-
+<hr>
+<footer align="center">2018 © Powered by www.scale.in.ua</footer>
 </body>
 </html>

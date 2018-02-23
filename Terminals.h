@@ -11,7 +11,7 @@
 #include "Terminal.h"
 #include "SerialPort.h"
 
-#define TERMINAL_MAX 2
+#define TERMINAL_MAX 3
 
 class BK_Zevs3Class : public TerminalClass{
 /*
@@ -52,12 +52,12 @@ class BK_Zevs3Class : public TerminalClass{
 							case 4:
 							case 5:
 							if (b != _space_byte)
-							_w = _reverse?char(b)+_w:_w+char(b);
+								_w = _reverse?char(b)+_w:_w+char(b);
 							break;
 							default:
 							if (b == XOR){
 								_weight = _w.toFloat();
-								SerialPort.println(_weight);
+								//SerialPort.println(_weight);
 								//println(_w.toFloat());
 							}
 						}
@@ -70,37 +70,123 @@ class BK_Zevs3Class : public TerminalClass{
 		String getName(){
 			return _name;
 		};
+		bool saveValueHttp(BrowserServerClass *s){};
 };
 
 class KeliXK3118T1Class : public TerminalClass{	
+	/* =5123.45(kg)\xd\xa */
 	private:
 		String _name;
-		bool _reverse = true;
-		int _total = 12, _valid = 7;
+		bool _reverse = false;
+		int _start = 1, _end = 7;
+		int _sync_byte = '=';
 		
 	public:
 		KeliXK3118T1Class(String n): _name(n){};	
 		void handlePort(){
 			if (SerialPort.available()) {
-				String str = SerialPort.readStringUntil(0xa); //LF	
-				int len = str.length();	
-				if(len >= _total){
-					int b = len - _total;
-					int e = len - (_total - _valid);
-					_weight = str.substring(b, e).toFloat();
-					SerialPort.println(_weight);
-				}
+				if(SerialPort.read() == _sync_byte){
+					int i = 1;
+					_w = "";
+					while(SerialPort.available()){
+						int b = SerialPort.read();
+						if(i >=_start && i <= _end ){							
+							_w = _reverse?char(b)+_w:_w+char(b);
+						}
+						if(i == _end){
+							_weight = _w.toFloat();
+						}
+						i++;
+					}	
+				}				
 			}				
 		};	
 		String getName(){
 			return _name;
 		};
+		bool saveValueHttp(BrowserServerClass *s){};
+};
+
+class ParserClass : public TerminalClass{
+	private:
+	String _name;
+	bool _reverse = true;
+	int _start = 0, _end = 2, _sync = 127, _trim = 32;
+	
+	public:
+	ParserClass(String n): _name(n){};
+	void handlePort(){
+		while(SerialPort.available()){
+			if(SerialPort.read() == _sync){
+				int i = 1;				
+				_w = "";
+				while(SerialPort.available()){
+					int b = SerialPort.read();
+					if(i >=_start && i <= _end ){
+						if (b != _trim || _trim == 0)
+							_w = _reverse?char(b)+_w:_w+char(b);	
+					}
+					if(i == _end){
+						_weight = _w.toFloat();	
+					}					
+					i++;
+				}
+			}
+		}
+	};
+	String getName(){return _name;};
+	bool saveValueHttp(BrowserServerClass *s){
 		
+		if (s->hasArg("rev"))
+			_reverse = true;
+		else
+			_reverse = false;
+		_start = s->arg("str").toInt();
+		_end = s->arg("end").toInt();
+		_sync = s->arg("syn").toInt();
+		_trim = s->arg("trm").toInt();
+		
+		File readFile = SPIFFS.open(TERMINAL_FILE, "r");
+		if (!readFile) {        
+			readFile.close();
+			return false;	
+		}
+		
+		size_t size = readFile.size();
+		std::unique_ptr<char[]> buf(new char[size]);
+		readFile.readBytes(buf.get(), size);
+		readFile.close();
+		
+		DynamicJsonBuffer jsonBuffer(JSON_ARRAY_SIZE(TERMINAL_MAX));
+		JsonObject& json = jsonBuffer.parseObject(buf.get());
+
+		if (json.containsKey(TERMINAL_TERMINAL_JSON)){
+			for(int i; i<TERMINAL_MAX;i++){
+				if (json[TERMINAL_TERMINAL_JSON][i]["name"] == "parser"){
+					json[TERMINAL_TERMINAL_JSON][i]["rev_id"] = _reverse;
+					json[TERMINAL_TERMINAL_JSON][i]["syn_id"] = _sync;
+					json[TERMINAL_TERMINAL_JSON][i]["str_id"] = _start;
+					json[TERMINAL_TERMINAL_JSON][i]["end_id"] = _end;
+					json[TERMINAL_TERMINAL_JSON][i]["trm_id"] = _trim;
+					File saveFile = SPIFFS.open(TERMINAL_FILE, "w");
+					if (!saveFile) {
+						saveFile.close();
+						return false;
+					}
+					json.printTo(saveFile);
+					saveFile.flush();
+					saveFile.close();
+					return true;		
+				}
+			}	
+		}		
+		return false;	
+	};	
 };
 
 class TerminalControllerClass{
 	private:
-		TerminalClass *_t[TERMINAL_MAX] = {new KeliXK3118T1Class("xk3118t1"), new BK_Zevs3Class("vk_zevs3")};
+		TerminalClass *_t[TERMINAL_MAX] = {new KeliXK3118T1Class("xk3118t1"), new BK_Zevs3Class("vk_zevs3"), new ParserClass("parser")};
 		int _index = 0;
 	public:
 		TerminalControllerClass(int index){	identify(index);};

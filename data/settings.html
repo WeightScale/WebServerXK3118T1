@@ -17,8 +17,14 @@
         }
         table {width: 100%;}
         input{
-            width:auto;text-align: right;
+            width:100%;text-align: right;
             font-size:18px;
+        }
+        input[type=submit]{
+            width:auto;
+        }
+        .td{
+            text-align: right;
         }
     </style>
     <script>
@@ -197,21 +203,6 @@
 <fieldset>
     <details><summary>Конфигурация сети</summary>
         <br>
-        <table>
-            <tr>
-                <td><h5>Имя хоста:</h5></td>
-                <td><h5 id="id_local_host"></h5></td>
-            </tr>
-        </table>
-        <hr>
-        <h5 align='left'><b>Точка доступа весов</b></h5>
-        <table>
-            <tr>
-                <td id="id_ap_ssid"></td>
-                <td id="id_ap_ip"></td>
-            </tr>
-        </table>
-        <hr>
         <h5 align='left'><b>Точка доступа WiFi роутера</b></h5>
         <form id="form_id" action='javascript:submitFormNet("form_id")'>
             Получать IP:
@@ -256,7 +247,7 @@
             <table>
                 <tr>
                     <td><h5 id='id_date'>дата время</h5></td>
-                    <td><input type='submit' name="data" value='УСТАНОВИТЬ НОВУЮ'/></td>
+                    <td><input type='submit' name="data" value='УСТАНОВИТЬ'/></td>
                 </tr>
             </table>
         </form>
@@ -299,7 +290,23 @@
     </details>
 
 </fieldset><br/>
-<a href='/setport.html'>порт</a>
+<fieldset>
+    <details>
+        <summary>Информация</summary>
+        <br>
+        <table>
+            <tr><td><h5>Терминал:</h5></td><td class="td"><h5 id="id_trm"></h5></td></tr>
+            <tr><td><h5>Имя хоста:</h5></td><td class="td"><h5 id="id_local_host"></h5></td></tr>
+        </table>
+        <hr>
+        <h5 align='left'><b>Точка доступа весов</b></h5>
+        <table>
+            <tr><td id="id_ap_ssid"></td><td id="id_ap_ip" class="td"></td></tr>
+        </table>
+        <hr>
+        <a href='/setport.html'>порт</a>
+    </details>
+</fieldset>
 <hr>
 <footer align="center">2018 © Powered by www.scale.in.ua</footer>
 </body>
