@@ -20,6 +20,7 @@ class TerminalClass  {
 		virtual void handlePort()=0;
 		virtual String getName()=0;
 		virtual bool saveValueHttp(BrowserServerClass *s)=0;
+		virtual bool downloadValue(int)=0;
 		float getWeight(){
 			return _weight;	
 		};

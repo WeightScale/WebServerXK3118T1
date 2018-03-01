@@ -71,6 +71,7 @@ class BK_Zevs3Class : public TerminalClass{
 			return _name;
 		};
 		bool saveValueHttp(BrowserServerClass *s){};
+		bool downloadValue(int inx){};
 };
 
 class KeliXK3118T1Class : public TerminalClass{	
@@ -95,16 +96,18 @@ class KeliXK3118T1Class : public TerminalClass{
 						}
 						if(i == _end){
 							_weight = _w.toFloat();
+							return;
 						}
 						i++;
 					}	
 				}				
-			}				
+			}							
 		};	
 		String getName(){
 			return _name;
 		};
 		bool saveValueHttp(BrowserServerClass *s){};
+		bool downloadValue(int inx){};
 };
 
 class ParserClass : public TerminalClass{
@@ -127,7 +130,7 @@ class ParserClass : public TerminalClass{
 							_w = _reverse?char(b)+_w:_w+char(b);	
 					}
 					if(i == _end){
-						_weight = _w.toFloat();	
+						_weight = _w.toFloat();
 					}					
 					i++;
 				}
@@ -182,6 +185,41 @@ class ParserClass : public TerminalClass{
 		}		
 		return false;	
 	};	
+	bool downloadValue(int inx){
+		_reverse = false;
+		_start = 0;
+		_end = 1;
+		_sync = 0;
+		_trim = 0;
+		File portFile;
+		if (SPIFFS.exists(TERMINAL_FILE)){
+			portFile = SPIFFS.open(TERMINAL_FILE, "r");
+		}else{
+			portFile = SPIFFS.open(TERMINAL_FILE, "w+");
+		}
+		if (!portFile) {
+			portFile.close();
+			return false;
+		}
+
+		size_t size = portFile.size();
+		std::unique_ptr<char[]> buf(new char[size]);
+		portFile.readBytes(buf.get(), size);
+		portFile.close();
+		DynamicJsonBuffer jsonBuffer(size);
+		JsonObject& json = jsonBuffer.parseObject(buf.get());
+		
+		if (!json.success()) {
+			return false;
+		}
+		
+		_reverse = json[TERMINAL_TERMINAL_JSON][inx]["rev_id"];
+		_sync = json[TERMINAL_TERMINAL_JSON][inx]["syn_id"];
+		_start = json[TERMINAL_TERMINAL_JSON][inx]["str_id"];
+		_end = json[TERMINAL_TERMINAL_JSON][inx]["end_id"];
+		_trim = json[TERMINAL_TERMINAL_JSON][inx]["trm_id"];
+		return true;	
+	}
 };
 
 class TerminalControllerClass{
@@ -208,8 +246,10 @@ class TerminalControllerClass{
 			for(int i = 0; i < TERMINAL_MAX; i++){
 				if(_t[i] != NULL){
 					pos++;
-					if(pos == t)
-						_index = t;
+					if(pos == t){
+						_index = t;	
+						_t[_index]->downloadValue(_index);
+					}						
 				}
 			}	
 		}	
