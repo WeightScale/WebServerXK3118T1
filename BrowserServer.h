@@ -26,7 +26,6 @@
 #define DNS_PORT 53
 
 typedef struct {
-	//bool auth;
 	String wwwUsername;
 	String wwwPassword;
 } strHTTPAuth;
@@ -46,8 +45,8 @@ class BrowserServerClass : public ESP8266WebServer{
 		~BrowserServerClass();
 		void begin();
 		void init();
-		static String urldecode(String input); // (based on https://code.google.com/p/avr-netino/)
-		static unsigned char h2int(char c);
+		//static String urldecode(String input); // (based on https://code.google.com/p/avr-netino/)
+		//static unsigned char h2int(char c);
 		void send_wwwauth_configuration_html();
 		//void restart_esp();		
 		String getContentType(String filename);	

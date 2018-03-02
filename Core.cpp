@@ -116,8 +116,8 @@ void CoreClass::saveValueSettingsHttp(const char * text) {
 		String message = " ";
 		if (browserServer.hasArg("ssids")){
 			_settings.autoIp = true;
-			_settings.scaleWlanSSID = browserServer.urldecode(browserServer.arg("ssids"));
-			_settings.scaleWlanKey = browserServer.urldecode(browserServer.arg("key"));	
+			_settings.scaleWlanSSID = browserServer.arg("ssids");
+			_settings.scaleWlanKey = browserServer.arg("key");	
 			goto save;
 		}else if (browserServer.hasArg("ssid")){
 			_settings.autoIp = false;
@@ -125,29 +125,28 @@ void CoreClass::saveValueSettingsHttp(const char * text) {
 				_settings.autoIp = true;
 			else
 				_settings.autoIp = false;
-			_settings.scaleLanIp = browserServer.urldecode(browserServer.arg("lan_ip"));			
-			_settings.scaleGateway = browserServer.urldecode(browserServer.arg("gateway"));
-			_settings.scaleSubnet = browserServer.urldecode(browserServer.arg("subnet"));		
-			_settings.scaleWlanSSID = browserServer.urldecode(browserServer.arg("ssid"));
-			_settings.scaleWlanKey = browserServer.urldecode(browserServer.arg("key"));	
+			_settings.scaleLanIp = browserServer.arg("lan_ip");			
+			_settings.scaleGateway = browserServer.arg("gateway");
+			_settings.scaleSubnet = browserServer.arg("subnet");		
+			_settings.scaleWlanSSID = browserServer.arg("ssid");
+			_settings.scaleWlanKey = browserServer.arg("key");	
 			goto save;
 		}
 		
 		if(browserServer.hasArg("data")){
 			DateTimeClass DateTime(browserServer.arg("data"));
 			Rtc.SetDateTime(DateTime.toRtcDateTime());
-			String message = getDateTime();
-			browserServer.send(200, TEXT_HTML, message);
+			browserServer.send(200, TEXT_HTML, getDateTime());
 			return;	
 		}
 		if (browserServer.hasArg("host")){
-			_settings.hostUrl = browserServer.urldecode(browserServer.arg("host"));
-			_settings.hostPin = browserServer.urldecode(browserServer.arg("pin"));
+			_settings.hostUrl = browserServer.arg("host");
+			_settings.hostPin = browserServer.arg("pin");
 			goto save;	
 		}
 		if (browserServer.hasArg("name_admin")){
-			_settings.scaleName = browserServer.urldecode(browserServer.arg("name_admin"));
-			_settings.scalePass = browserServer.urldecode(browserServer.arg("pass_admin"));
+			_settings.scaleName = browserServer.arg("name_admin");
+			_settings.scalePass = browserServer.arg("pass_admin");
 			goto save;
 		}		
 		save:

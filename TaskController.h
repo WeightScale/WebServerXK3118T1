@@ -1,13 +1,6 @@
-/*
- * TaskController.h
- *
- * Created: 28.11.2017 8:40:51
- *  Author: Kostya
- */ 
 
-
-#ifndef TASKCONTROLLER_H_
-#define TASKCONTROLLER_H_
+#ifndef _TASKCONTROLLER_H_
+#define _TASKCONTROLLER_H_
 
 #include "Task.h"
 #include "inttypes.h"
