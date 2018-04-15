@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Администрация</title>
+    <meta charset="UTF-8">
+    <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1'/>
+    <link rel="stylesheet" href="global.css" type="text/css" />
+    <script>
+        function enableAuthFields(cb) {
+            //document.getElementById("wwwuser").disabled = !cb.checked;
+            //document.getElementById("wwwpass").disabled = !cb.checked;
+        }
+
+        function submitFrm(frm) {
+            if (document.getElementById("auth").checked) {
+                if ((document.getElementById("user").value !== "") && (document.getElementById("pass").value !== "")) {
+                    //document.getElementById("submitResult").innerHTML = "Auth updated";
+                    console.log("User: " + document.getElementById("user").value);
+                    console.log("Pass: " + document.getElementById("pass").value);
+                    console.log("Enable: " + document.getElementById("auth").checked);
+                    frm.submit();
+                } else {
+                    document.getElementById("submitResult").innerHTML = "Имя или пароль неверный";
+                }
+            } else {
+                //document.getElementById("wwwuser").value = "";
+                document.getElementById("pass").value = "";
+                //document.getElementById("submitResult").innerHTML = "Auth disabled";
+                console.log("User: " + document.getElementById("user").value);
+                console.log("Pass: " + document.getElementById("pass").value);
+                console.log("Enable: " + document.getElementById("auth").checked);
+                frm.submit();
+
+            }
+        }
+
+        function restartESP() {
+            setValues("/admin/restart");
+        }
+
+        function GetState() {
+            var http_request = new XMLHttpRequest();
+            http_request.overrideMimeType('application/json');
+            http_request.onreadystatechange = function(){
+                if (http_request.readyState === 4  ){
+                    try{
+                        var json = JSON.parse(http_request.responseText);
+                        for (entry in json) {
+                            try {
+                                if(document.getElementById(entry).type === 'checkbox'){
+                                    document.getElementById(entry).checked = json[entry];
+                                }else
+                                    document.getElementById(entry).value = json[entry];
+                            }catch (e){}
+                        }
+                    }catch(e){
+                        alert(e.toString());
+                    }
+                }
+            };
+            http_request.open("GET", "/secret.json", true);
+            http_request.send(null);
+        }
+
+        window.onload = function () {
+            load("microajax.js", "js", function () {
+                GetState();
+            });
+            enableAuthFields(document.getElementById("wwwauth"));
+        }
+        function load(e, t, n) {
+            if ("js" === t) {
+                var a = document.createElement("script");
+                a.src = e,
+                    a.type = "text/javascript",
+                    a.async = !1,
+                    a.onload = function () { n() },
+                    document.getElementsByTagName("head")[0].appendChild(a)
+            } else if ("css" === t) {
+                var a = document.createElement("link");
+                a.href = e,
+                    a.rel = "stylesheet",
+                    a.type = "text/css",
+                    a.async = !1,
+                    a.onload = function () { n() },
+                    document.getElementsByTagName("head")[0].appendChild(a)
+            }
+        }
+    </script>
+</head>
+<body>
+<a href="/"  class="btn btn--s btn--blue">&lt;</a>&nbsp;&nbsp;<strong>Администрация</strong>
+<hr>
+<form>
+    <div>
+        <table border="0"  cellspacing="0" cellpadding="3" style="width:100%" >
+
+            <tr>
+                <td align="left">
+                    <a href="/editor.html" class="btn btn--m btn--blue">Редактор файлов</a>
+                </td>
+
+            </tr>
+            <tr>
+                <td colspan="2" align="left">
+                    <a href="/update" class="btn btn--m btn--blue">Обновление ПО</a>
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <a href="/admin/restart" class="btn btn--m btn--blue">Перегрузка</a>
+                </td>
+            </tr>
+        </table>
+    </div>
+</form>
+<form id="wwwAuthForm" action="" method="get">
+    <table border="0" cellspacing="0" cellpadding="3" style="width:100%">
+        <tr>
+            <td align="right">Use auth:</td>
+            <td>
+                <input type="checkbox" id="auth" name="wwwauth" onclick='enableAuthFields(this);'>
+            </td>
+        </tr>
+        <tr>
+            <td align="left">ИМЯ:</td>
+            <td>
+                <input type="text" id="user" name="wwwuser" value="">
+            </td>
+        </tr>
+        <tr>
+            <td align="left">ПАРОЛЬ:</td>
+            <td>
+                <input type="password" id="pass" name="wwwpass" value="">
+                <hr>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" align="center">
+                <a href='javascript:submitFrm(document.forms["wwwAuthForm"])' class="btn btn--m btn--blue">Save</a>
+            </td>
+        </tr>
+    </table>
+</form>
+<table border="0" cellspacing="0" cellpadding="3" style="width:100%">
+    <tr>
+        <td id="submitResult"></td>
+    </tr>
+</table>
+</body>
+</html>

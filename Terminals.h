@@ -11,7 +11,7 @@
 #include "Terminal.h"
 #include "SerialPort.h"
 
-#define TERMINAL_MAX 3
+#define TERMINAL_MAX 4
 
 class BK_Zevs3Class : public TerminalClass{
 /*
@@ -26,14 +26,13 @@ class BK_Zevs3Class : public TerminalClass{
 	|CHK| is 1?byte check?sum, which equals to the former 8 bytesТ
 	XOR sum.
 */
-	private:
-		String _name; 
+	private:		 
 		bool _reverse = true;
 		int _sync_byte = 127;
 		int _space_byte = 32;
 		
 	public:
-		BK_Zevs3Class(String n): _name(n){};
+		BK_Zevs3Class(String n): TerminalClass(n){};
 		//virtual ~TerminalClass();
 		void handlePort(){
 			while(SerialPort.available()){
@@ -66,24 +65,21 @@ class BK_Zevs3Class : public TerminalClass{
 					}
 				}
 			}	
-		};		
-		String getName(){
-			return _name;
-		};
-		bool saveValueHttp(BrowserServerClass *s){};
+		};				
+		bool saveValueHttp(AsyncWebServerRequest * request){};
 		bool downloadValue(int inx){};
+		//bool sendClient(AsyncWebSocketClient * client){};
 };
 
 class KeliXK3118T1Class : public TerminalClass{	
 	/* =5123.45(kg)\xd\xa */
 	private:
-		String _name;
 		bool _reverse = false;
 		int _start = 1, _end = 7;
 		int _sync_byte = '=';
 		
 	public:
-		KeliXK3118T1Class(String n): _name(n){};	
+		KeliXK3118T1Class(String n): TerminalClass(n){};	
 		void handlePort(){
 			if (SerialPort.available()) {
 				if(SerialPort.read() == _sync_byte){
@@ -102,22 +98,94 @@ class KeliXK3118T1Class : public TerminalClass{
 					}	
 				}				
 			}							
-		};	
-		String getName(){
-			return _name;
-		};
-		bool saveValueHttp(BrowserServerClass *s){};
+		};			
+		bool saveValueHttp(AsyncWebServerRequest * request){};
 		bool downloadValue(int inx){};
+};
+
+class Zevs_A12eClass : public TerminalClass{
+	/* >SG   5687kg\xd\xa 
+	S - стабильно 
+	U - не стабильно
+	N - стабильно негатив
+	V - перегруз
+	*/
+	
+	private:
+	//bool _reverse = false;
+	//int _start = 2, _end = 8;
+	int _point = 0;				//где находитс€ точка
+	int _stage, _type;
+	int _sync_byte = '>',_space_byte = 32;
+	
+	public:
+	Zevs_A12eClass(String n): TerminalClass(n){};
+	void handlePort(){
+		if (SerialPort.available()) {
+			if(SerialPort.read() == _sync_byte){
+				int i = 0;
+				_w = "";
+				_point = 0;
+				while(SerialPort.available()){
+					int b = SerialPort.read();
+					switch(i){
+						case 0:
+							_stage = b;
+						break;
+						case 1:
+							_type = b;
+						break;						
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+							if (b != _space_byte)
+								_w = _w+char(b);
+							if(b == '.')
+								_point = (8 - i);
+							
+						break;
+						default:
+							if (b == 0x0A){
+								_weight = _w.toFloat();
+							}
+					}
+					i++;
+				}
+			}
+		}
+	};	
+	bool saveValueHttp(AsyncWebServerRequest * request){};
+	bool downloadValue(int inx){};
+	size_t doData(JsonObject& json ){
+		char buff[10];
+		formatValue(buff);
+		json["w"]= String(buff);
+		json["c"]= BATTERY.getCharge();
+		if (_stage == 'S' || _stage == 'N')
+			json["s"]= true;	
+		else
+			json["s"]= false;		
+		json["st"] = _stage;
+		json["t"] = _type;
+		
+		return json.measureLength();
+	}
+	void formatValue(char* string){
+		dtostrf(_weight, 6-_point, _point, string);
+	}
 };
 
 class ParserClass : public TerminalClass{
 	private:
-	String _name;
 	bool _reverse = true;
 	int _start = 0, _end = 2, _sync = 127, _trim = 32;
 	
 	public:
-	ParserClass(String n): _name(n){};
+	ParserClass(String n): TerminalClass(n){};
 	void handlePort(){
 		while(SerialPort.available()){
 			if(SerialPort.read() == _sync){
@@ -136,18 +204,17 @@ class ParserClass : public TerminalClass{
 				}
 			}
 		}
-	};
-	String getName(){return _name;};
-	bool saveValueHttp(BrowserServerClass *s){
+	};	
+	bool saveValueHttp(AsyncWebServerRequest * request){
 		
-		if (s->hasArg("rev"))
+		if (request->hasArg("rev"))
 			_reverse = true;
 		else
 			_reverse = false;
-		_start = s->arg("str").toInt();
-		_end = s->arg("end").toInt();
-		_sync = s->arg("syn").toInt();
-		_trim = s->arg("trm").toInt();
+		_start = request->arg("str").toInt();
+		_end = request->arg("end").toInt();
+		_sync = request->arg("syn").toInt();
+		_trim = request->arg("trm").toInt();
 		
 		File readFile = SPIFFS.open(TERMINAL_FILE, "r");
 		if (!readFile) {        
@@ -221,44 +288,5 @@ class ParserClass : public TerminalClass{
 		return true;	
 	}
 };
-
-class TerminalControllerClass{
-	private:
-		TerminalClass *_t[TERMINAL_MAX] = {new KeliXK3118T1Class("xk3118t1"), new BK_Zevs3Class("vk_zevs3"), new ParserClass("parser")};
-		int _index = 0;
-	public:
-		TerminalControllerClass(int index){	identify(index);};
-		TerminalClass* getIndexOf(int index){
-			int pos = -1;
-			for(int i = 0; i < TERMINAL_MAX; i++){
-				if(_t[i] != NULL){
-					pos++;
-					if(pos == index){
-						_index = index;
-						return _t[_index];
-					}
-				}
-			}
-			return NULL;
-		}
-		void identify(int t){
-			int pos = -1;
-			for(int i = 0; i < TERMINAL_MAX; i++){
-				if(_t[i] != NULL){
-					pos++;
-					if(pos == t){
-						_index = t;	
-						_t[_index]->downloadValue(_index);
-					}						
-				}
-			}	
-		}	
-		TerminalClass* getCurrent(){return (!_t[_index]) ?	_t[0] :	_t[_index];}	
-		int getCount(){	return TERMINAL_MAX;}
-		int getIndex(){	return _index;}
-		void handle(){ _t[_index]->handlePort();}	
-};
-
-extern TerminalControllerClass TerminalController;
 
 #endif /* TERMINALS_H_ */

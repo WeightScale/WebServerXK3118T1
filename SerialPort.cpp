@@ -6,15 +6,14 @@
 #include "SerialPort.h"
 #include "DateTime.h"
 #include "BrowserServer.h"
-#include "Terminals.h"
+#include "TerminalController.h"
+#include "web_server_config.h"
 
 SerialPortClass SerialPort(UART0);
 
 
 SerialPortClass::SerialPortClass(int port) : HardwareSerial(port) {
 	_server = NULL;
-	_username = NULL;
-	_password = NULL;
 	_authenticated = false;	
 }
 
@@ -23,30 +22,35 @@ SerialPortClass::SerialPortClass(int port) : HardwareSerial(port) {
 void SerialPortClass::init(){
 	flush();
 	begin(constrain(_port.speed, 600, 9600));
-	TerminalController.identify(_port.terminal);
+	TERMINAL.identify(_port.terminal);
 }
 
-void SerialPortClass::setup(BrowserServerClass *server, const char * username, const char * password){	
+void SerialPortClass::setup(BrowserServerClass *server){	
 	//ScaleMemClass::init();
-	_server = server;
-	_username = (char *)username;
-	_password = (char *)password;
+	_server = server;	
 	_downloadPort();
 	init();
 	//Serial.setTimeout(100);
-	_server->on("/wt", [&](){
+	_server->on("/wt", HTTP_GET,[this](AsyncWebServerRequest * request){
+		TERMINAL.handle();
 		char buffer[10];
-		float w = TerminalController.getCurrent()->getWeight();
-		dtostrf(w, 6-getAccuracy(), getAccuracy(), buffer);
-		_server->send(200, "text/plain", String("{\"w\":\""+String(buffer)+"\",\"c\":"+String(CORE.getCharge())+",\"s\":"+String(SerialPort.getStableWeight())+"}"));
-		CORE.detectStable(w);	
-		taskPower.updateCache();
-	});
-	_server->on("/setport.html",HTTP_POST, [&]() {
-		if (!_server->isAuthentified())
-			return _server->requestAuthentication();
-		_saveValuePortHttp();
-		taskPower.updateCache();
+		//float w = TERMINAL.getCurrent()->getWeight();
+		//float w = 0.12;
+		//dtostrf(w, 6-getAccuracy(), getAccuracy(), buffer);
+		TERMINAL.getCurrent()->formatValue(buffer);
+		request->send(200, "text/plain", String("{\"w\":\""+String(buffer)+"\",\"c\":"+String(BATTERY.getCharge())+",\"s\":"+String(SerialPort.getStableWeight())+"}"));
+		//CORE.detectStable(w);	
+		POWER.updateCache();
+	});	
+	_server->on("/setport.html",[this](AsyncWebServerRequest * request) {
+		if(!request->authenticate(_port.user.c_str(), _port.password.c_str()))
+		if (!_server->checkAdminAuth(request)){
+			return request->requestAuthentication();
+		}
+		//if (!_server->isAuthentified(request))
+			//return request->requestAuthentication();
+		_saveValuePortHttp(request);
+		POWER.updateCache();
 	});
 	_server->on("/trm",HTTP_POST, handleValueTerminal);
 	/*_server->on("/trm",[&](){
@@ -69,21 +73,33 @@ void SerialPortClass::setup(BrowserServerClass *server, const char * username, c
 }
 
 /*! Получаем значения отправленые клиентом */
-void SerialPortClass::_saveValuePortHttp() {
-	//if (browserServer.args() > 0){  // Save Settings
-	if (_server->hasArg("spd")){
-		_port.terminal = _server->arg("trm").toInt();
-		_port.speed = _server->arg("spd").toInt();
-		_port.accuracy = _server->arg("acr").toInt();
-		flush();
-		begin(_port.speed);
-		TerminalController.identify(_port.terminal);
-	}
+void SerialPortClass::_saveValuePortHttp(AsyncWebServerRequest * request) {
+	if (request->args() > 0){  // Save Settings
+		if (request->hasArg("spd")){
+			_port.terminal = request->arg("trm").toInt();
+			_port.speed = request->arg("spd").toInt();
+			_port.accuracy = request->arg("acr").toInt();
+			flush();
+			begin(_port.speed);
+			TERMINAL.identify(_port.terminal);
+		}
+		if (request->hasArg("user")){
+			_port.user = request->arg("user");
+			_port.password = request->arg("pass");
+		}
 	
-	if (savePort()){		
-		return _server->send(200, "text/html", "");
+		if (savePort()){
+			goto url;
+		}else{
+			return request->send(400, "text/html", "Error");
+		}
 	}
-	_server->send(400, "text/html", "Error");
+	url:
+	#if HTML_PROGMEM
+		request->send_P(200,F(TEXT_HTML), setport_html);
+	#else
+		request->send(SPIFFS, request->url());
+	#endif	
 }
 
 bool SerialPortClass::savePort() {
@@ -103,6 +119,8 @@ bool SerialPortClass::savePort() {
 	json[PORT_TERMINAL_JSON] = _port.terminal;
 	json[PORT_SPEED_JSON]	= _port.speed;	
 	json[PORT_ACCURACY_JSON] = _port.accuracy;
+	json[PORT_USER_JSON]	= _port.user;
+	json[PORT_PASS_JSON] = _port.password;
 
 	json.printTo(portFile);
 	portFile.flush();
@@ -113,7 +131,9 @@ bool SerialPortClass::savePort() {
 bool SerialPortClass::_downloadPort() {
 	_port.terminal = 0;
 	_port.speed = 9600;	
-	_port.accuracy = 1;
+	_port.accuracy = 0;
+	_port.user = "admin";
+	_port.password = "1234";
 	File portFile;
 	if (SPIFFS.exists(PORT_FILE)){
 		portFile = SPIFFS.open(PORT_FILE, "r");
@@ -139,16 +159,18 @@ bool SerialPortClass::_downloadPort() {
 	_port.terminal = json[PORT_TERMINAL_JSON];
 	_port.speed = json[PORT_SPEED_JSON];	
 	_port.accuracy = json[PORT_ACCURACY_JSON];
+	_port.user = json[PORT_USER_JSON].as<String>();
+	_port.password = json[PORT_PASS_JSON].as<String>();
 	return true;
 }
 
-void handleValueTerminal(){
+void handleValueTerminal(AsyncWebServerRequest * request){
 	BrowserServerClass *server = SerialPort.getServer();
-	if (!server->isAuthentified())
-		return server->requestAuthentication();
-	if (server->args() > 0){
-		if(TerminalController.getCurrent()->saveValueHttp(server))
-			return server->send(200, TEXT_HTML, "");		
+	if (!server->isAuthentified(request))
+		return request->requestAuthentication();
+	if (request->args() > 0){
+		if(TERMINAL.getCurrent()->saveValueHttp(request))
+			return request->send(200, TEXT_HTML, "");		
 	}
 	//server->send(400, TEXT_HTML, "");
 }

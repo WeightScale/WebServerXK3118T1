@@ -1,7 +1,7 @@
-#include <Arduino.h>
+п»ї#include <Arduino.h>
 #include <WiFiClient.h>
 #include <WiFiServer.h>
-#include <ESP8266WebServer.h>
+//#include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266httpUpdate.h>
 #include <WiFiUdp.h>
@@ -17,138 +17,189 @@ extern "C" uint32_t _SPIFFS_end;
 #include "Version.h"
 
 
-HttpUpdaterClass httpUpdater;
-String updaterError;
-int command;
+//HttpUpdaterClass httpUpdater;
 
-static const char serverIndex[] PROGMEM = R"(<html><body><form method='POST' action='' enctype='multipart/form-data'>
-											<input type='file' name='update'>
-											<input type='submit' value='Update'>
-											</form></body></html>)";
 
-HttpUpdaterClass::HttpUpdaterClass(){
-	_server = NULL;
-	_username = NULL;
-	_password = NULL;
-	_authenticated = false;
+HttpUpdaterClass::HttpUpdaterClass(const String& username, const String& password)
+:_username(username)
+,_password(password),_authenticated(false)
+{}
+
+bool HttpUpdaterClass::canHandle(AsyncWebServerRequest *request){
+	if(request->url().equalsIgnoreCase("/update")){
+		return true;
+	}
+	return false;
 }
 
-void HttpUpdaterClass::setup(BrowserServerClass *server, const char * path, const char * username, const char * password){
-	_server = server;
-	_username = (char *)username;
-	_password = (char *)password;
+void HttpUpdaterClass::handleRequest(AsyncWebServerRequest *request){
+	if(_username.length() && _password.length() && !request->authenticate(_username.c_str(), _password.c_str()))
+	return request->requestAuthentication();
+	_authenticated = true;
+	Serial.println(String(Update.hasError()));
+	if(request->method() == HTTP_GET){
+		request->send_P(200, TEXT_HTML, serverIndex);
+		}else if (request->method()==HTTP_POST){
+		digitalWrite(2, LOW); //led off
+		if (_command == U_SPIFFS){
+			//delay(1000);
+			CORE->saveSettings();
+			//Scale.saveDate();
+			request->redirect("/");
+			return;
+		}
+		if(_updaterError && _updaterError[0] != 0x00){
+			AsyncWebServerResponse * response = request->beginResponse(200, TEXT_HTML, _updaterError);
+			request->send(response);
+			}else{
+			AsyncWebServerResponse * response = request->beginResponse_P(200, TEXT_HTML, successResponse);
+			response->addHeader("Connection", "close");
+			request->send(response);
+			request->onDisconnect([](){ESP.reset();});
+		}
+	}
+}
 
-	// handler for the /update form page						
-	_server->on(path, HTTP_GET, handleUpdatePage);						/* Обновление локально */
-
-	// handler for the /update form POST (once file upload finishes)
-	_server->on(path, HTTP_POST, handleEndUpdate, handleStartUpdate);	/* Процесс обновления локально */
+void HttpUpdaterClass::handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
+	digitalWrite(LED, !digitalRead(LED));	//led on
 	
-	_server->on("/hu", HTTP_GET, handleHttpStartUpdate);				/* Обновление чере интернет address/hu?host=sdb.net.ua/update.php */
+	if(!index){
+		_updaterError = String();
+		if(!_authenticated){
+			return;
+		}
+		size_t size;
+		if(filename.indexOf("spiffs.bin",0) != -1) {
+			_command = U_SPIFFS;
+			size = ((size_t) &_SPIFFS_end - (size_t) &_SPIFFS_start);
+		}else if(filename.indexOf("ino.bin",0) != -1) {
+			_command = U_FLASH;
+			size = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+		}else{
+			request->client()->close(true);
+			return;
+		}
+		
+		Update.runAsync(true);
+		if(!Update.begin(size, _command)){
+			setUpdaterError();
+		}
+	}
+	if(!Update.hasError()){
+		if(Update.write(data, len) != len){
+			setUpdaterError();
+		}
+	}
+	if(final){
+		if(!Update.end(true)){
+			setUpdaterError();
+		}
+	}		
 }
 
-void setUpdaterError(){	
+void HttpUpdaterClass::setUpdaterError(){	
 	StreamString str;
 	Update.printError(str);
-	updaterError = str.c_str();
+	_updaterError = str.c_str();
 }
 
-void handleUpdatePage(){
-	if(!httpUpdater.getServer()->authenticate(httpUpdater.getUserName(), httpUpdater.getPassword()))
-		return httpUpdater.getServer()->requestAuthentication();
+/*
+void handleUpdatePage(AsyncWebServerRequest *request){
+	if(!request->authenticate(httpUpdater.getUserName(), httpUpdater.getPassword()))
+		return request->requestAuthentication();
 	httpUpdater.setAuthenticated(true);
-	httpUpdater.getServer()->send_P(200, PSTR(TEXT_HTML), serverIndex);		
-}
+	request->send_P(200, PSTR(TEXT_HTML), serverIndex);		
+}*/
 
-void handleStartUpdate(){
-	digitalWrite(LED, HIGH);
-	HTTPUpload& upload = httpUpdater.getServer()->upload();
+/*
+void handleStartUpdate(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
+	digitalWrite(LED, LOW);
 	
-	size_t size;
-	if(upload.status == UPLOAD_FILE_START){
+	if(!index){
 		updaterError = String();
-		
 		if(!httpUpdater.getAuthenticated()){
 			return;
 		}
-		
-		if(upload.filename.indexOf("spiffs.bin",0) != -1) {
+		size_t size;
+		if(filename.indexOf("spiffs.bin",0) != -1) {
 			command = U_SPIFFS;
 			size = ((size_t) &_SPIFFS_end - (size_t) &_SPIFFS_start);
-		} else if(upload.filename.indexOf("ino.bin",0) != -1) {
+		}else if(filename.indexOf("ino.bin",0) != -1) {
 			command = U_FLASH;
 			size = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
 		}else{
-			updaterError = "Не верный фаил";
+			updaterError = "РќРµ РІРµСЂРЅС‹Р№ С„Р°РёР»";
 			return;
-		}
-		WiFiUDP::stopAll();
-		if(!Update.begin(size, command)){//start with max available size
+		}		
+		
+		Update.runAsync(true);
+		if(!Update.begin(size, command)){
 			setUpdaterError();
 		}
-	} else if(httpUpdater.getAuthenticated() && upload.status == UPLOAD_FILE_WRITE && !updaterError.length()){
-		if(Update.write(upload.buf, upload.currentSize) != upload.currentSize){
+	}
+	if(!Update.hasError()){
+		if(Update.write(data, len) != len){
 			setUpdaterError();
 		}
-	} else if(httpUpdater.getAuthenticated() && upload.status == UPLOAD_FILE_END && !updaterError.length()){
-		if(!Update.end(true)){ //true to set the size to the current progress
+	}
+	if(final){
+		if(!Update.end(true)){
 			setUpdaterError();
 		}
-	} else if(httpUpdater.getAuthenticated() && upload.status == UPLOAD_FILE_ABORTED){
-		Update.end();
 	}
 	delay(0);	
-}
+}*/
 
-void handleEndUpdate(){
+/*
+void handleEndUpdate(AsyncWebServerRequest * request){
 	if (updaterError && updaterError[0] != 0x00) {
-		httpUpdater.getServer()->send(200, F(TEXT_HTML), String(F("Update error: ")) + updaterError);
+		request->send(200, F(TEXT_HTML), String(F("Update error: ")) + updaterError);
 	} else {
 		if (command == U_SPIFFS){
 			delay(2000);
 			CORE.saveSettings();
 			SerialPort.savePort();
-			handleFileRead("/");
+			request->redirect("/");
 			return;
 		}
-		httpUpdater.getServer()->client().setNoDelay(true);
-		httpUpdater.getServer()->send_P(200, PSTR(TEXT_HTML), successResponse);
+		request->client()->setNoDelay(true);
+		request->send_P(200, PSTR(TEXT_HTML), successResponse);
 		delay(100);
-		httpUpdater.getServer()->client().stop();
+		request->client()->stop();
 		ESP.restart();
 	}
-}
+}*/
 
-void handleHttpStartUpdate(){										/* Обновление чере интернет address/hu?host=sdb.net.ua/update.php */
-	if(!httpUpdater.getServer()->authenticate(httpUpdater.getUserName(), httpUpdater.getPassword()))
-		return httpUpdater.getServer()->requestAuthentication();
-	if(httpUpdater.getServer()->hasArg("host")){
-		String host = httpUpdater.getServer()->arg("host");
+void HttpUpdaterClass::handleHttpStartUpdate(AsyncWebServerRequest * request){										/* РћР±РЅРѕРІР»РµРЅРёРµ С‡РµСЂРµ РёРЅС‚РµСЂРЅРµС‚ address/hu?host=sdb.net.ua/update.php */
+	if(!request->authenticate(_username.c_str(), _password.c_str()))
+		return request->requestAuthentication();
+	if(request->hasArg("host")){
+		String host = request->arg("host");
 		//_server->send(200, "text/plain", host);
 		ESPhttpUpdate.rebootOnUpdate(false);
-		digitalWrite(LED, HIGH);
+		digitalWrite(LED, LOW);
 		String url = String("http://");
 		url += host;
-		t_httpUpdate_return ret = ESPhttpUpdate.updateSpiffs(url, SPIFFS_VERSION);
+		t_httpUpdate_return ret = ESPhttpUpdate.updateSpiffs(url,SPIFFS_VERSION);
 		if (ret == HTTP_UPDATE_OK){
-			CORE.saveSettings();
+			CORE->saveSettings();
 			SerialPort.savePort();
 			ret = ESPhttpUpdate.update(url, SKETCH_VERSION);
 		}
 		switch(ret) {
 			case HTTP_UPDATE_FAILED:
-				httpUpdater.getServer()->send(404, "text/plain", ESPhttpUpdate.getLastErrorString());
+				request->send(404, "text/plain", ESPhttpUpdate.getLastErrorString());
 			break;
 			case HTTP_UPDATE_NO_UPDATES:
-				httpUpdater.getServer()->send(304, "text/plain", "Обновление не требуется");
+				request->send(304, "text/plain", "РћР±РЅРѕРІР»РµРЅРёРµ РЅРµ С‚СЂРµР±СѓРµС‚СЃСЏ");
 			break;
 			case HTTP_UPDATE_OK:
-				httpUpdater.getServer()->client().stop();
+				request->client()->stop();
 				ESP.restart();
 			break;
 		}
 		
 	}
-	digitalWrite(LED, LOW);		
+	digitalWrite(LED, HIGH);		
 };
 	

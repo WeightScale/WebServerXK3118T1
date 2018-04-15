@@ -44,7 +44,7 @@ void Task::onRun(void (*callback)(void)){
 }
 
 void Task::run(){
-	if(_onRun != NULL && !Paused)
+	if(_onRun != NULL && !_paused)
 		_onRun();
 
 	// Update last_run and _cached_next_run

@@ -5,25 +5,117 @@
 #include "DateTime.h"
 #include "BrowserServer.h"
 #include "SerialPort.h"
+#include "web_server_config.h"
 
-CoreClass CORE;
+CoreClass * CORE;
+BatteryClass BATTERY;
+Task POWER;
 
-CoreClass::CoreClass(){
+CoreClass::CoreClass(const String& username, const String& password):
+_username(username),
+_password(password),
+_authenticated(false){
+	begin();
 }
 
 CoreClass::~CoreClass(){}
 
-void CoreClass::begin(){
-	SPIFFS.begin();	
+bool CoreClass::canHandle(AsyncWebServerRequest *request){	
+	if(request->url().equalsIgnoreCase("/settings.html")){
+		goto auth;
+	}
+#if HTML_PROGMEM
+	else if(request->url().equalsIgnoreCase("/sn")){
+		goto auth;
+	}
+#endif
+	else
+		return false;
+	auth:
+		if (!request->authenticate(_settings.scaleName.c_str(), _settings.scalePass.c_str())){
+			if(!request->authenticate(_username.c_str(), _password.c_str())){
+				request->requestAuthentication();
+				return false;
+			}
+		}
+		return true;
+}
+
+void CoreClass::handleRequest(AsyncWebServerRequest *request){
+	if (request->args() > 0){		
+		String message = " ";
+		if (request->hasArg("ssid")){
+			if (request->hasArg("auto"))
+				_settings.autoIp = true;
+			else
+				_settings.autoIp = false;
+			_settings.scaleLanIp = request->arg("lan_ip");			
+			_settings.scaleGateway = request->arg("gateway");
+			_settings.scaleSubnet = request->arg("subnet");
+			_settings.scaleWlanSSID = request->arg("ssid");
+			_settings.scaleWlanKey = request->arg("key");	
+			goto save;
+		}		
+		if(request->hasArg("data")){
+			DateTimeClass DateTime(request->arg("data"));
+			Rtc.SetDateTime(DateTime.toRtcDateTime());
+			request->send(200, TEXT_HTML, getDateTime());
+			return;
+		}
+		if (request->hasArg("host")){
+			_settings.hostUrl = request->arg("host");
+			_settings.hostPin = request->arg("pin").toInt();
+			goto save;	
+		}
+		if (request->hasArg("n_admin")){
+			_settings.scaleName = request->arg("n_admin");
+			_settings.scalePass = request->arg("p_admin");
+			goto save;
+		}
+		if (request->hasArg("pt")){
+			if (request->hasArg("pe"))
+				POWER.enabled = _settings.power_time_enable = true;
+			else
+				POWER.enabled = _settings.power_time_enable = false;
+			_settings.time_off = request->arg("pt").toInt();
+			goto save;
+		}		
+		save:
+		if (saveSettings()){
+			goto url;
+		}
+		return request->send(400);
+	}
+	url:	
+	#if HTML_PROGMEM
+		request->send_P(200,F(TEXT_HTML), settings_html);
+	#else
+		if(request->url().equalsIgnoreCase("/sn")){
+			request->send_P(200, F(TEXT_HTML), netIndex);
+		}else
+			request->send(SPIFFS, request->url());
+	#endif
+		
+}
+
+void CoreClass::begin(){		
 	Rtc.Begin();
 	_downloadSettings();
-	_callibratedBaterry();	
+	POWER.onRun(powerOff);
+	POWER.enabled = _settings.power_time_enable;	
+	POWER.setInterval(_settings.time_off);
+	BATTERY.setMax(_settings.bat_max);
+	if(BATTERY.callibrated()){		
+		_settings.bat_max = BATTERY.getMax();
+		saveSettings();	
+	};	
 }
 
 bool CoreClass::saveEvent(const String& event, const String& value) {
 	String date = getDateTime();
 	bool flag = WiFi.status() == WL_CONNECTED?eventToServer(date, event, value):false;
-	File readFile = SPIFFS.open("/events.json", "r");
+	File readFile;
+	readFile = SPIFFS.open("/events.json", "r+");
     if (!readFile) {        
         readFile.close();
 		if (!SPIFFS.exists("/events.json")){
@@ -47,9 +139,9 @@ bool CoreClass::saveEvent(const String& event, const String& value) {
 		JsonArray& events = json.createNestedArray(EVENTS_JSON);
 		for(int i = 0; i < MAX_EVENTS; i++){
 			JsonObject& ev = jsonBuffer.createObject();
-			ev["date"] = "";
-			ev["value"] = "";
-			ev["server"] = false;
+			ev["d"] = "";
+			ev["v"] = "";
+			ev["s"] = false;
 			events.add(ev);	
 		}		
 		/*if (!json.success())
@@ -58,9 +150,9 @@ bool CoreClass::saveEvent(const String& event, const String& value) {
 	
 	long n = json["cur_num"];
 	
-	json[EVENTS_JSON][n]["date"] = date;
-	json[EVENTS_JSON][n]["value"] = value;	
-	json[EVENTS_JSON][n]["server"] = flag;
+	json[EVENTS_JSON][n]["d"] = date;
+	json[EVENTS_JSON][n]["v"] = value;	
+	json[EVENTS_JSON][n]["s"] = flag;
 		
 	if ( ++n == MAX_EVENTS){
 		n = 0;
@@ -70,7 +162,8 @@ bool CoreClass::saveEvent(const String& event, const String& value) {
 	//TODO add AP data to html
 	File saveFile = SPIFFS.open("/events.json", "w");
 	if (!saveFile) {
-		saveFile.close();
+		SPIFFS.remove("/events.json");
+		//saveFile.close();
 		return false;
 	}
 
@@ -97,10 +190,12 @@ String CoreClass::getIp(){
 
 /* */	
 bool CoreClass::eventToServer(const String& date, const String& type, const String& value){
+	if(_settings.hostPin == 0)
+		return false;
 	HTTPClient http;
 	String message = "http://";
 	message += _settings.hostUrl.c_str();
-	String hash = getHash(_settings.hostPin.c_str(), date, type, value);	
+	String hash = getHash(_settings.hostPin, date, type, value);	
 	message += "/scales.php?hash=" + hash;
 	http.begin(message);
 	http.setTimeout(_settings.timeout);
@@ -112,51 +207,81 @@ bool CoreClass::eventToServer(const String& date, const String& type, const Stri
 	return false;
 }
 
-void CoreClass::saveValueSettingsHttp(const char * text) {	
-		String message = " ";
-		if (browserServer.hasArg("ssids")){
-			_settings.autoIp = true;
-			_settings.scaleWlanSSID = browserServer.arg("ssids");
-			_settings.scaleWlanKey = browserServer.arg("key");	
-			goto save;
-		}else if (browserServer.hasArg("ssid")){
+
+/*
+void CoreClass::handleSetAccessPoint(AsyncWebServerRequest * request){	
+	if (request->hasArg("ssids")){
+		_settings.autoIp = true;
+		_settings.scaleWlanSSID = request->arg("ssids");
+		_settings.scaleWlanKey = request->arg("key");
+	}
+	AsyncWebServerResponse *response;	
+	if (saveSettings()){
+		response = request->beginResponse(200, TEXT_HTML, successResponse);
+		response->addHeader("Connection", "close");
+		request->onDisconnect([](){ESP.reset();});
+	}else{
+		response = request->beginResponse(400);
+	}
+	request->send(response);	
+}*/
+
+#if! HTML_PROGMEM
+void CoreClass::saveValueSettingsHttp(AsyncWebServerRequest *request) {	
+	if (!browserServer.isAuthentified(request))
+		return request->requestAuthentication();
+	if (request->args() > 0){	// Save Settings
+		if (request->hasArg("ssid")){
 			_settings.autoIp = false;
-			if (browserServer.hasArg("auto"))
+			if (request->hasArg("auto"))
 				_settings.autoIp = true;
 			else
 				_settings.autoIp = false;
-			_settings.scaleLanIp = browserServer.arg("lan_ip");			
-			_settings.scaleGateway = browserServer.arg("gateway");
-			_settings.scaleSubnet = browserServer.arg("subnet");		
-			_settings.scaleWlanSSID = browserServer.arg("ssid");
-			_settings.scaleWlanKey = browserServer.arg("key");	
+			_settings.scaleLanIp = request->arg("lan_ip");			
+			_settings.scaleGateway = request->arg("gateway");
+			_settings.scaleSubnet = request->arg("subnet");
+			_settings.scaleWlanSSID = request->arg("ssid");			
+			_settings.scaleWlanKey = request->arg("key");	
 			goto save;
 		}
 		
-		if(browserServer.hasArg("data")){
-			DateTimeClass DateTime(browserServer.arg("data"));
+		if(request->hasArg("data")){
+			DateTimeClass DateTime(request->arg("data"));
 			Rtc.SetDateTime(DateTime.toRtcDateTime());
-			browserServer.send(200, TEXT_HTML, getDateTime());
+			request->send(200, TEXT_HTML, getDateTime());
 			return;	
 		}
-		if (browserServer.hasArg("host")){
-			_settings.hostUrl = browserServer.arg("host");
-			_settings.hostPin = browserServer.arg("pin");
+		if (request->hasArg("host")){
+			_settings.hostUrl = request->arg("host");
+			_settings.hostPin = request->arg("pin").toInt();
 			goto save;	
 		}
-		if (browserServer.hasArg("name_admin")){
-			_settings.scaleName = browserServer.arg("name_admin");
-			_settings.scalePass = browserServer.arg("pass_admin");
+		if (request->hasArg("n_admin")){
+			_settings.scaleName = request->arg("n_admin");
+			_settings.scalePass = request->arg("p_admin");
 			goto save;
-		}		
+		}	
+		if (request->hasArg("pt")){
+			if (request->hasArg("pe"))
+				POWER.enabled = _settings.power_time_enable = true;
+			else
+				POWER.enabled = _settings.power_time_enable = false;
+			_settings.time_off = request->arg("pt").toInt();
+			goto save;
+		}	
 		save:
 		if (saveSettings()){
-			return browserServer.send(200, TEXT_HTML, text);
+			goto url;
 		}
-		browserServer.send(400, TEXT_HTML, text);
+		return request->send(400);	
+	}
+	url: 		
+	request->send(SPIFFS, request->url());
 }
+#endif
 
-String CoreClass::getHash(const String& code, const String& date, const String& type, const String& value){
+
+String CoreClass::getHash(const int code, const String& date, const String& type, const String& value){
 	
 	String event = String(code);
 	event += "\t" + date + "\t" + type + "\t" + value;
@@ -175,13 +300,6 @@ String CoreClass::getHash(const String& code, const String& date, const String& 
 	return hash;
 }
 
-int CoreClass::getBattery(int times){
-	_charge = getADC(times);
-	_charge = constrain(_charge, MIN_CHG, _settings.bat_max);
-	_charge = map(_charge, MIN_CHG, _settings.bat_max, 0, 100);
-	return _charge;	
-}
-
 bool CoreClass::saveSettings() {	
 	File serverFile = SPIFFS.open(SETTINGS_FILE, "w+");
 	if (!serverFile) {
@@ -196,15 +314,17 @@ bool CoreClass::saveSettings() {
 		JsonObject& scale = json.createNestedObject(SCALE_JSON);
 	}
 	
-	json[SCALE_JSON]["id_name_admin"] = _settings.scaleName;
-	json[SCALE_JSON]["id_pass_admin"] = _settings.scalePass;
+	json[SCALE_JSON]["id_n_admin"] = _settings.scaleName;
+	json[SCALE_JSON]["id_p_admin"] = _settings.scalePass;
 	json[SCALE_JSON]["id_auto"] = _settings.autoIp;
 	json[SCALE_JSON]["id_lan_ip"] = _settings.scaleLanIp;
 	json[SCALE_JSON]["id_gateway"] = _settings.scaleGateway;
 	json[SCALE_JSON]["id_subnet"] = _settings.scaleSubnet;
 	json[SCALE_JSON]["id_ssid"] = _settings.scaleWlanSSID;
 	json[SCALE_JSON]["id_key"] = _settings.scaleWlanKey;
-	json[SCALE_JSON]["bat_max"] = _settings.bat_max;	
+	json[SCALE_JSON]["bat_max"] = _settings.bat_max;
+	json[SCALE_JSON]["id_pe"] = _settings.power_time_enable;
+	json[SCALE_JSON]["id_pt"] = _settings.time_off;	
 	
 	if (!json.containsKey(SERVER_JSON)) {
 		JsonObject& server = json.createNestedObject(SERVER_JSON);
@@ -228,8 +348,11 @@ bool CoreClass::_downloadSettings() {
 	_settings.scaleGateway = "192.168.1.1";
 	_settings.scaleSubnet = "255.255.255.0";
 	_settings.hostUrl = HOST_URL;
+	_settings.hostPin = 0;
 	_settings.timeout = TIMEOUT_HTTP;
-	_settings.bat_max = MIN_CHG+1;
+	_settings.bat_max = MIN_CHG;
+	_settings.power_time_enable = false;
+	_settings.time_off = 2400000;
 	File serverFile;
 	if (SPIFFS.exists(SETTINGS_FILE)){
 		serverFile = SPIFFS.open(SETTINGS_FILE, "r");	
@@ -255,63 +378,52 @@ bool CoreClass::_downloadSettings() {
 		return false;
 	}
 	if (json.containsKey(SCALE_JSON)){
-		_settings.scaleName = json[SCALE_JSON]["id_name_admin"].as<String>();
-		_settings.scalePass = json[SCALE_JSON]["id_pass_admin"].as<String>();
+		_settings.scaleName = json[SCALE_JSON]["id_n_admin"].as<String>();
+		_settings.scalePass = json[SCALE_JSON]["id_p_admin"].as<String>();
 		_settings.autoIp = json[SCALE_JSON]["id_auto"];
 		_settings.scaleLanIp = json[SCALE_JSON]["id_lan_ip"].as<String>();
 		_settings.scaleGateway = json[SCALE_JSON]["id_gateway"].as<String>();
 		_settings.scaleSubnet = json[SCALE_JSON]["id_subnet"].as<String>();
 		_settings.scaleWlanSSID = json[SCALE_JSON]["id_ssid"].as<String>();
 		_settings.scaleWlanKey = json[SCALE_JSON]["id_key"].as<String>();
-		_settings.bat_max = json[SCALE_JSON]["bat_max"];	
+		_settings.bat_max = json[SCALE_JSON]["bat_max"];
+		_settings.power_time_enable = json[SCALE_JSON]["id_pe"];
+		_settings.time_off = json[SCALE_JSON]["id_pt"];	
 	}
 	if (json.containsKey(SERVER_JSON)){
 		_settings.hostUrl = json[SERVER_JSON]["id_host"].as<String>();
-		_settings.hostPin = json[SERVER_JSON]["id_pin"].as<String>();	
+		_settings.hostPin = json[SERVER_JSON]["id_pin"];	
 		_settings.timeout = json[SERVER_JSON]["timeout"];	
-	}
-		
-	_settings.bat_max = constrain(_settings.bat_max, MIN_CHG+1, 1024);
+	}	
 	return true;
 }
 
-/* */
-void CoreClass::detectStable(double w){
-	static double weight_temp;
-	static unsigned char stable_num;
-	//static bool isStable;	
-		if (weight_temp == w) {
-			//if (stable_num <= STABLE_NUM_MAX){
-				if (stable_num > STABLE_NUM_MAX) {
-					if (!SerialPort.getStableWeight()){						
-						if(abs(w) > 0){
-							saveEvent("weight", String(w)+"_kg");	
-						}
-						SerialPort.setStableWeight(true);
-					}
-					return;
-				}
-				stable_num++;
-			//}
-		} else { 
-			stable_num = 0;
-			SerialPort.setStableWeight(false);
-		}
-		weight_temp = w;
-}
+
 
 void powerOff(){
 	SerialPort.end(); /// Выключаем port
+	SPIFFS.end();
 	digitalWrite(EN_NCP, LOW); /// Выключаем стабилизатор
 	ESP.reset();
 }
 
-void reconnectWifi(){
-	browserServer.client().stop();
-	connectWifi();	
+void reconnectWifi(AsyncWebServerRequest * request){
+	AsyncWebServerResponse *response = request->beginResponse_P(200, PSTR(TEXT_HTML), "RECONNECT...");
+	response->addHeader("Connection", "close");
+	request->onDisconnect([](){
+		SPIFFS.end();
+		ESP.reset();});
+	request->send(response);
 }
 
-int CoreClass::getADC(byte times){
+int BatteryClass::fetchCharge(int times){
+	_charge = _get_adc(times);
+	_charge = constrain(_charge, MIN_CHG, _max);
+	_charge = map(_charge, MIN_CHG, _max, 0, 100);
+	return _charge;
+}
+
+int BatteryClass::_get_adc(byte times){
 	long sum = 0;
 	for (byte i = 0; i < times; i++) {
 		sum += analogRead(A0);
@@ -319,17 +431,20 @@ int CoreClass::getADC(byte times){
 	return times == 0?sum :sum / times;	
 }
 
-void CoreClass::_callibratedBaterry(){
-	int charge = getADC();
-	
+bool BatteryClass::callibrated(){
+	bool flag = false;
+	int charge = _get_adc();	
+	int t = _max;
+	_max = constrain(t, MIN_CHG, 1024);
+	if(t != _max){
+		flag = true;	
+	}
 	charge = constrain(charge, MIN_CHG, 1024);
-	if (_settings.bat_max < MIN_CHG){
-		_settings.bat_max = MIN_CHG;
+	if (_max < charge){
+		_max = charge;	
+		flag = true;
 	}
-	if (_settings.bat_max < charge){
-		_settings.bat_max = charge;	
-		saveSettings();
-	}
+	return flag;
 }
 
 
